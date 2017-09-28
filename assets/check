@@ -52,7 +52,12 @@ http_code="${result##*$'\n'}"
 req_output=$(echo "${result}" | sed '$d')
 
 if [[ ${http_code} -eq '200' ]]; then
-  echo "${req_output}" | jq "[{ref: [.results[]|{key: .name|split(\"-\")[0] ,value: .name}]|sort_by(.key)[]|select(.key >= (\"${version}\"|split(\"-\")[0])).value}]" >&3
+  sorted_versions="$(echo "${req_output}" | jq '[.results[]|{key: .name|split("-")[0] ,value: .name}]|sort_by(.key)')"
+  if [[ -z "${version}" ]]; then
+    echo "${sorted_versions}" | jq "[{ref: last.value}]"
+  else
+    echo "${sorted_versions}" | jq "[{ref: .[]|select(.key >= (\"${version}\"|split(\"-\")[0])).value}]" >&3
+  fi
   exit 0
 else
   echo "Unable to retreive versions in artifactory"
