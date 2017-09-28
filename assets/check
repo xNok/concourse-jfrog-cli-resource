@@ -1,0 +1,62 @@
+#!/bin/bash
+
+set -e
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+PATH=/usr/local/bin:$PATH
+TMPDIR=${TMPDIR:-/tmp}
+
+source $(dirname $0)/common
+
+payload=$(mktemp ${TMPDIR}/artifactory-resource-request.XXXXXX)
+
+cat > $payload <&0
+
+api_key=$(jq -r '.source.api_key // ""' < ${payload})
+repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
+group_id=$(jq -r '.source.group_id // ""' < ${payload})
+artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
+host=$(jq -r '.source.host // ""' < ${payload})
+
+is_valid 'api_key' "${api_key}"
+is_valid 'repository_id' "${repository_id}"
+is_valid 'group_id' "${group_id}"
+is_valid 'artifact_id' "${artifact_id}"
+is_valid 'host' "${host}"
+
+host=$(strip_last_slash "${host}")
+
+group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
+
+aql="items.find(
+    {\"repo\": \"${repository_id}\"},
+    {\"type\": \"folder\"},
+    {\"path\": \"${group_id_path}/${artifact_id}\"}
+).include(\"repo\",\"path\",\"name\")"
+
+version=$(jq -r '.version.ref // ""' < ${payload})
+
+result=$(curl \
+  -k \
+  -X POST \
+  -H "X-JFrog-Art-Api:${api_key}" \
+  -H "Content-Type:text/plain" \
+  -d "${aql}" \
+  --write-out "\n%{http_code}" \
+  --silent \
+  ${host}/api/search/aql)
+
+http_code="${result##*$'\n'}"
+req_output=$(echo "${result}" | sed '$d')
+
+if [[ ${http_code} -eq '200' ]]; then
+  echo "${req_output}" | jq "[{ref: [.results[]|{key: .name|split(\"-\")[0] ,value: .name}]|sort_by(.key)[]|select(.key >= (\"${version}\"|split(\"-\")[0])).value}]" >&3
+  exit 0
+else
+  echo "Unable to retreive versions in artifactory"
+  echo "Request: curl -k -X POST -H "X-JFrog-Art-Api:${api_key}" -H "Content-Type:text/plain" -d "${aql}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql"
+  echo "Error:${req_output}"
+  exit 1
+fi

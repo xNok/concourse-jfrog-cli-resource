@@ -1,0 +1,107 @@
+strip_last_slash() {
+    path=${1}
+    if [[ "${path}" == */ ]]; then
+        path=${path%?}
+    fi
+    echo "${path}"
+}
+
+folder_exists() {
+    path=${1}
+    if [[ ! -d "${path}" ]]; then
+        echo "artifacts path '${path}' does not exists"
+        exit 1
+    fi
+}
+
+get_version() {
+    payload=${1}
+    destination=${2}
+    version_param=$(jq -r '.params.version // ""' < ${payload})
+    version_file=${version_param:=${path_param}/version}
+
+    if [[ ! -f "${destination}/${version_file}" ]]; then
+        echo "version file '${version_file}' does not exists"
+        return 1
+    fi
+
+    version=$(cat ${destination}/${version_file} | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+    if [[ -z "${version}" ]]; then
+        echo "version is undefined"
+        return 1
+    fi
+
+    echo "${version}"
+    return 0
+}
+
+is_valid() {
+    field_name=${1}
+    field_value=${2}
+
+    if [ -z "${field_value}" ]; then
+        echo "invalid source (missing ${field_name})"
+        exit 1
+    fi
+}
+
+folder_metadata() {
+    payload=${1}
+    destination=${2}
+    version=${3}
+
+    api_key=$(jq -r '.source.api_key // ""' < ${payload})
+    repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
+    group_id=$(jq -r '.source.group_id // ""' < ${payload})
+    artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
+    host=$(jq -r '.source.host // ""' < ${payload})
+
+    is_valid 'api_key' ${api_key}
+    is_valid 'repository_id' ${repository_id}
+    is_valid 'group_id' ${group_id}
+    is_valid 'artifact_id' ${artifact_id}
+    is_valid 'host' ${host}
+
+    metadata_folder='[]'
+
+    if [[ -z "${version}" ]]; then
+        version=$(get_version "${payload}" "${destination}")
+        if [[ "${?}" -ne '0' ]]; then
+            echo "${metadata_folder}"
+            return 0
+        fi
+    fi
+
+    aql_folder="items.find(
+        {\"repo\": \"${repository_id}\"},
+        {\"type\": \"folder\"},
+        {\"path\": \"${group_id_path}/${artifact_id}\"},
+        {\"name\": \"${version}\"}
+    )"
+
+    result_folder=$(curl \
+        -k \
+        -X POST \
+        -H "X-JFrog-Art-Api:${api_key}" \
+        -H "Content-Type:text/plain" \
+        -d "${aql_folder}" \
+        --write-out "\n%{http_code}" \
+        --silent \
+        ${host}/api/search/aql)
+  
+    http_code="${result_folder##*$'\n'}"
+    req_folder=$(echo "${result_folder}" | sed '$d')
+
+    if [[ ${http_code} -eq '200' ]]; then
+        metadata_folder=$(echo ${req_folder} | jq '[.results[]|del(.type,.size)|to_entries[]|{name: .key, value}]')
+    else
+        echo "Unable to retreive files in artifactory"
+        echo "Request: curl -k -X POST -H 'X-JFrog-Art-Api:*****' -H 'Content-Type:text/plain' -d "${aql_folder}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql"
+        echo "Error: ${req_folder}"
+        return 1
+    fi
+
+    echo "${metadata_folder}"
+    return 0
+}

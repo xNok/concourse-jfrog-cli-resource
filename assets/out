@@ -1,0 +1,89 @@
+#!/bin/bash
+
+set -e
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+PATH=/usr/local/bin:$PATH
+TMPDIR=${TMPDIR:-/tmp}
+
+source $(dirname $0)/common
+
+destination=${1}
+
+if [ -z "${destination}" ]; then
+  echo "usage: $0 <path/to/destination>" >&2
+  exit 1
+fi
+
+payload=$(mktemp ${TMPDIR}/artifactory-resource-request.XXXXXX)
+
+cat > $payload <&0
+
+api_key=$(jq -r '.source.api_key // ""' < ${payload})
+repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
+group_id=$(jq -r '.source.group_id // ""' < ${payload})
+artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
+path_param=$(jq -r '.params.path // ""' < ${payload})
+host=$(jq -r '.source.host // ""' < ${payload})
+
+is_valid 'api_key' "${api_key}"
+is_valid 'repository_id' "${repository_id}"
+is_valid 'group_id' "${group_id}"
+is_valid 'artifact_id' "${artifact_id}"
+is_valid 'host' "${host}"
+
+host=$(strip_last_slash "${host}")
+path_param=$(strip_last_slash "${path_param}")
+
+folder_exists "${destination}/${path_param}"
+
+version=$(get_version "${payload}" "${destination}")
+group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
+files=$(find ${destination}/${path_param} -type f -name "*" -not -name "version")
+metadata_files='[]'
+
+for abs_file in $files; do
+  file=$(basename ${abs_file})
+  sha1=$(sha1sum "${abs_file}" | head -c 40)
+  sha256=$(sha256sum "${abs_file}" | head -c 64)
+
+  result=$(curl \
+    -k \
+    -o - \
+    -X PUT \
+    -H "X-JFrog-Art-Api:${api_key}" \
+    -H "X-Checksum-Deploy:true" \
+    -H "X-Checksum-Sha1:${sha1}" \
+    -H "X-Checksum-Sha256: ${sha256}" \
+    --write-out "\n%{http_code}" \
+    --silent \
+    ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
+
+  http_code="${result##*$'\n'}"
+  req_output=$(echo "${result}" | sed '$d')
+
+  if [[ ${http_code} -eq '404' ]]; then
+    req_output=$(curl \
+      -k \
+      -H "X-JFrog-Art-Api:${api_key}" \
+      -H "X-Checksum-Sha1:${sha1}" \
+      -H "X-Checksum-Sha256: ${sha256}" \
+      -T "${abs_file}" \
+      --silent \
+      ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
+  elif [[ ${http_code} -ne '201' ]]; then
+    echo "An error occured while trynig to create artifact ${file} by checksum"
+    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}"
+    echo "Error:${req_output}"
+    exit 1
+  fi
+
+  metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
+done
+
+metadata_files="$(echo ${metadata_files} | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
+metadata_folder=$(folder_metadata "${payload}" "${destination}")
+echo $(echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}") >&3
+exit 0
