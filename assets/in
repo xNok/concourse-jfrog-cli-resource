@@ -27,6 +27,7 @@ group_id=$(jq -r '.source.group_id // ""' < ${payload})
 artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
 host=$(jq -r '.source.host // ""' < ${payload})
 version=$(jq -r '.version.ref // ""' < ${payload})
+qualifiers_param=$(jq -r '.params // {}|.qualifiers // []|join(" ")' < ${payload})
 
 is_valid 'api_key' "${api_key}"
 is_valid 'repository_id' "${repository_id}"
@@ -41,7 +42,18 @@ group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 aql_files="items.find(
     {\"repo\": \"${repository_id}\"},
     {\"type\": \"file\"},
-    {\"path\": \"${group_id_path}/${artifact_id}/${version}\"}
+    {\"path\": \"${group_id_path}/${artifact_id}/${version}\"},
+    {\"\$or\": [
+	      {\"name\":{\"\$match\": \"${artifact_id}-${version}.*\"}}"
+
+for qualifier in $qualifiers_param; do
+  aql_files="${aql_files},
+        {\"name\":{\"\$match\": \"${artifact_id}-${version}-${qualifier}.*\"}}"
+done
+
+aql_files="${aql_files}
+	    ]
+    }
 )"
 
 result_files=$(curl \
