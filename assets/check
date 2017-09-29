@@ -54,7 +54,7 @@ req_output=$(echo "${result}" | sed '$d')
 if [[ ${http_code} -eq '200' ]]; then
   sorted_versions="$(echo "${req_output}" | jq '[.results[]|{key: .name|split("-")[0] ,value: .name}]|sort_by(.key)')"
   if [[ -z "${version}" ]]; then
-    echo "${sorted_versions}" | jq "[{ref: last.value}]"
+    echo "${sorted_versions}" | jq "[{ref: last.value}]" >&3
   else
     echo "${sorted_versions}" | jq "[{ref: .[]|select(.key >= (\"${version}\"|split(\"-\")[0])).value}]" >&3
   fi

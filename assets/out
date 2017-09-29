@@ -41,7 +41,7 @@ folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
-files=$(find ${destination}/${path_param} -type f -name "*" -not -name "version")
+files=$(find ${destination}/${path_param} -type f -name "*" -not -name "version" -not -name "_remote.repositories")
 metadata_files='[]'
 
 for abs_file in $files; do
