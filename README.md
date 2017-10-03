@@ -40,6 +40,11 @@ Retreiving artifacts:
 ``` yaml
 - get: my-artifact
 ```
+
+``` yaml
+- get: my-artifact
+  params: [sources,javadoc]
+```
 Pushing local commits to the repo:
 ``` yaml
 - put: my-artifact
@@ -51,6 +56,8 @@ Pushing local commits to the repo:
 The resource searches for folders under `http(s)://<host>/<repository_id>/<group_id>/<artifact_id>`. It expects to get a list of versions in the `<timestamp>-<git hash>` format. The timestamp is used to sort versions. All subsequent versions of the given ref are returned. If no version is provided, the resource returns only the latest.
 ### `in`: Download the artifacts at the given ref.
 Download the artifacts of the given ref to the destination. It will return the same given ref as version.
+#### Parameters
+* `qualifiers`: *Optional.* The artifacts qualifiers ex: [source,javadoc].
 ### `out`: Push the artifacts to the repository.
 Push the artifacts from the given path to the Artifactory maven repository. The resource will push every files presents in the folder specified in the **path** parameter. The version parameter is optionnal but the resource expect at least a version file containing a version in the format `<timestamp>-<git hash>`. You can easily generate a version of this format from your pipeline using the shell `echo "$(date +'%s')-$(git rev-parse --short HEAD)" > version`.
 #### Parameters
