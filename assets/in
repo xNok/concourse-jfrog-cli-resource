@@ -69,6 +69,8 @@ result_files=$(curl \
 http_code="${result_files##*$'\n'}"
 req_files=$(echo "${result_files}" | sed '$d')
 
+echo "${version}" > $destination/version
+
 if [[ ${http_code} -eq '200' ]]; then
   length=$(echo ${req_files} | jq '.results|length')
   for (( i=0; i<$((length)); i++)); do

@@ -1,0 +1,19 @@
+platform: linux
+image_resource:
+    type: docker-image
+    source:
+        repository: alpine/git
+        tag: latest
+inputs:
+- name: artifactory-resource-source
+
+outputs:
+- name: version
+
+run:
+    path: /bin/sh
+    args:
+    - -exc
+    - |
+      cd artifactory-resource-source
+      ci/tasks/version.sh > ../version/version
