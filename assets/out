@@ -40,10 +40,6 @@ path_param=$(strip_last_slash "${path_param}")
 folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
-if [[ "${?}" -ne '0' ]]; then
-  echo "${version}" >&2
-  exit 1
-fi
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 files=$(find ${destination}/${path_param} -type f -name "*" -not -name "version" -not -name "_remote.repositories")
 metadata_files='[]'

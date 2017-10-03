@@ -21,14 +21,14 @@ get_version() {
     version_file=${version_param:=${path_param}/version}
 
     if [[ ! -f "${destination}/${version_file}" ]]; then
-        echo "version file '${version_file}' does not exists"
+        echo "version file '${version_file}' does not exists" >&2
         return 1
     fi
 
     version=$(cat ${destination}/${version_file} | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
     if [[ -z "${version}" ]]; then
-        echo "version is undefined"
+        echo "version is undefined" >&2
         return 1
     fi
 
@@ -41,7 +41,7 @@ is_valid() {
     field_value=${2}
 
     if [ -z "${field_value}" ]; then
-        echo "invalid source (missing ${field_name})"
+        echo "invalid source (missing ${field_name})" >&2
         exit 1
     fi
 }
@@ -96,9 +96,9 @@ folder_metadata() {
     if [[ ${http_code} -eq '200' ]]; then
         metadata_folder=$(echo ${req_folder} | jq '[.results[]|del(.type,.size)|to_entries[]|{name: .key, value}]')
     else
-        echo "Unable to retreive files in artifactory"
-        echo "Request: curl -k -X POST -H 'X-JFrog-Art-Api:*****' -H 'Content-Type:text/plain' -d "${aql_folder}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql"
-        echo "Error: ${req_folder}"
+        echo "Unable to retreive files in artifactory" >&2
+        echo "Request: curl -k -X POST -H 'X-JFrog-Art-Api:*****' -H 'Content-Type:text/plain' -d "${aql_folder}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql" >&2
+        echo "Error: ${req_folder}" >&2
         return 1
     fi
 
