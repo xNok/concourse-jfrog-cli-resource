@@ -88,8 +88,8 @@ if [[ ${http_code} -eq '200' ]]; then
   echo $(echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}") >&3
   exit 0
 else
-  echo "Unable to retreive files in artifactory"
-  echo "Request: curl -k -X POST -H 'X-JFrog-Art-Api:*****' -H 'Content-Type:text/plain' -d "${aql_files}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql"
-  echo "Error:${req_files}"
+  echo "Unable to retreive files in artifactory" >&2
+  echo "Request: curl -k -X POST -H 'X-JFrog-Art-Api:*****' -H 'Content-Type:text/plain' -d "${aql_files}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql" >&2
+  echo "Error:${req_files}" >&2
   exit 1
 fi

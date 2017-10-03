@@ -60,8 +60,8 @@ if [[ ${http_code} -eq '200' ]]; then
   fi
   exit 0
 else
-  echo "Unable to retreive versions in artifactory"
-  echo "Request: curl -k -X POST -H "X-JFrog-Art-Api:${api_key}" -H "Content-Type:text/plain" -d "${aql}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql"
-  echo "Error:${req_output}"
+  echo "Unable to retreive versions in artifactory" >&2
+  echo "Request: curl -k -X POST -H "X-JFrog-Art-Api:${api_key}" -H "Content-Type:text/plain" -d "${aql}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql" >&2
+  echo "Error:${req_output}" >&2
   exit 1
 fi

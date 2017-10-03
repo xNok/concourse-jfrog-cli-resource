@@ -41,7 +41,7 @@ folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
 if [[ "${?}" -ne '0' ]]; then
-  echo "${version}"
+  echo "${version}" >&2
   exit 1
 fi
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
@@ -78,9 +78,9 @@ for abs_file in $files; do
       --silent \
       ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
   elif [[ ${http_code} -ne '201' ]]; then
-    echo "An error occured while trynig to create artifact ${file} by checksum"
-    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}"
-    echo "Error:${req_output}"
+    echo "An error occured while trynig to create artifact ${file} by checksum" >&2
+    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}" >&2
+    echo "Error:${req_output}" >&2
     exit 1
   fi
 
