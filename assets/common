@@ -46,6 +46,57 @@ is_valid() {
     fi
 }
 
+get_latest_version() {
+    payload=${1}
+
+    api_key=$(jq -r '.source.api_key // ""' < ${payload})
+    repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
+    group_id=$(jq -r '.source.group_id // ""' < ${payload})
+    artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
+    host=$(jq -r '.source.host // ""' < ${payload})
+
+    is_valid 'api_key' ${api_key}
+    is_valid 'repository_id' ${repository_id}
+    is_valid 'group_id' ${group_id}
+    is_valid 'artifact_id' ${artifact_id}
+    is_valid 'host' ${host}
+
+    lastest_version=''
+
+    group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
+
+    aql_folder="items.find(
+        {\"repo\": \"${repository_id}\"},
+        {\"type\": \"folder\"},
+        {\"path\": \"${group_id_path}/${artifact_id}\"}
+    ).include(\"repo\",\"name\",\"path\")"
+
+    result_folder=$(curl \
+        -k \
+        -X POST \
+        -H "X-JFrog-Art-Api:${api_key}" \
+        -H "Content-Type:text/plain" \
+        -d "${aql_folder}" \
+        --write-out "\n%{http_code}" \
+        --silent \
+        ${host}/api/search/aql)
+  
+    http_code="${result_folder##*$'\n'}"
+    req_folder=$(echo "${result_folder}" | sed '$d')
+
+    if [[ ${http_code} -eq '200' ]]; then
+        lastest_version=$(echo ${req_folder} | jq -r '[.results[].name|{timestamp: split("-")[0], ref: .}]|sort_by(.ref)|last.ref')
+    else
+        echo "Unable to retreive folder in artifactory (get_latest_version)" >&2
+        echo "Request: curl -k -X POST -H 'X-JFrog-Art-Api:*****' -H 'Content-Type:text/plain' -d "${aql_folder}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql" >&2
+        echo "Error: ${req_folder}" >&2
+        return 1
+    fi
+
+    echo "${lastest_version}"
+    return 0
+}
+
 folder_metadata() {
     payload=${1}
     destination=${2}
@@ -72,6 +123,8 @@ folder_metadata() {
             return 0
         fi
     fi
+
+    group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 
     aql_folder="items.find(
         {\"repo\": \"${repository_id}\"},
