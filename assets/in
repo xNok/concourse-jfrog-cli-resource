@@ -34,11 +34,7 @@ is_valid 'repository_id' "${repository_id}"
 is_valid 'group_id' "${group_id}"
 is_valid 'artifact_id' "${artifact_id}"
 is_valid 'host' "${host}"
-
-# If version is empty, pick the latest from artifactory.
-if [[ -z "${version}" ]]; then
-    version=$(get_latest_version "${payload}")
-fi
+is_valid 'version' "${version}"
 
 host=$(strip_last_slash "${host}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')

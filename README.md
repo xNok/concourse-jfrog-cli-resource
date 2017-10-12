@@ -35,6 +35,8 @@ resources:
       host: "https://emerald.squad.com/artifactory"
       repository_id: repo-local
 ```
+*Note:* Artifactory resource is using Artifactory Query Language (AQL) to extract metadata from the repositories. Currently, AQL can only extract data that resides in your instance of Artifactory, so it runs on local repositories, remote repository caches and virtual repositories. So, if your artifact is stored on a remote repository, you must specify the cache repository instead.
+
 Retreiving artifacts:
 
 ``` yaml
