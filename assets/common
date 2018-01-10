@@ -85,7 +85,7 @@ get_latest_version() {
     req_folder=$(echo "${result_folder}" | sed '$d')
 
     if [[ ${http_code} -eq '200' ]]; then
-        lastest_version=$(echo ${req_folder} | jq -r '[.results[].name|{timestamp: split("-")[0], ref: .}]|sort_by(.ref)|last.ref')
+        lastest_version=$(echo ${req_folder} | jq -r '[.results[].name|{timestamp: split("-")[0]|split(".")|map(.|tonumber), ref: .}]|sort_by(.ref)|last.ref')
     else
         echo "Unable to retreive folder in artifactory (get_latest_version)" >&2
         echo "Request: curl -k -X POST -H 'X-JFrog-Art-Api:*****' -H 'Content-Type:text/plain' -d "${aql_folder}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql" >&2
