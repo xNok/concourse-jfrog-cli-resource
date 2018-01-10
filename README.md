@@ -55,7 +55,7 @@ Pushing local commits to the repo:
 ```
 ## Behavior
 ### `check`: Check for new artifacts.
-The resource searches for folders under `http(s)://<host>/<repository_id>/<group_id>/<artifact_id>`. It expects to get a list of versions in the `<timestamp>-<git hash>` format. The timestamp is used to sort versions. All subsequent versions of the given ref are returned. If no version is provided, the resource returns only the latest.
+The resource searches for folders under `http(s)://<host>/<repository_id>/<group_id>/<artifact_id>`. It expects to get a list of versions in the `<timestamp>-<git hash>` format or in the semver format `1.2.3` (note that semver with release candidates - ex: `1.0.0-rc1` - are note currently supported). The timestamp is used to sort versions. All subsequent versions of the given ref are returned. If no version is provided, the resource returns only the latest.
 ### `in`: Download the artifacts at the given ref.
 Download the artifacts of the given ref to the destination. It will return the same given ref as version.
 #### Parameters
