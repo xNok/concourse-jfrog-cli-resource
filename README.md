@@ -45,7 +45,8 @@ Retreiving artifacts:
 
 ``` yaml
 - get: my-artifact
-  params: [sources,javadoc]
+  params: 
+    qualifiers: [sources,javadoc]
 ```
 Pushing local commits to the repo:
 ``` yaml
