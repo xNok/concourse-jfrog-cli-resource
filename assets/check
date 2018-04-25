@@ -50,16 +50,15 @@ result=$(curl \
 
 http_code="${result##*$'\n'}"
 req_output=$(echo "${result}" | sed '$d')
-
 if [[ ${http_code} -eq '200' ]]; then
-  sorted_versions="$(echo "${req_output}" | jq '[.results[]|{key: .name|split("-")[0]|split(".")|map(.|tonumber) ,value: .name}]|sort_by(.key)')"
+  sorted_versions="$(sort-versions -j "$(echo "${req_output}" | jq '[.results[].name]')")"
   total=$(echo "${req_output}" | jq '.range.total')
   if [[ "${total}" == "0" ]]; then
     echo "[]" >&3
   elif [[ -z "${version}" ]]; then
-    echo "${sorted_versions}" | jq "[{ref: last.value}]" >&3
+    echo "${sorted_versions}" | jq "[{ref: last}]" >&3
   else
-    echo "${sorted_versions}" | jq "[{ref: .[]|select(.key >= (\"${version}\"|split(\"-\")[0]|split(\".\")|map(.|tonumber))).value}]" >&3
+    echo "${sorted_versions}" | jq ".[.|to_entries|.[]|select(.value == \"${version}\").key:]" >&3
   fi
   exit 0
 else
