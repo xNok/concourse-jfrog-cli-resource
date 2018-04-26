@@ -58,7 +58,7 @@ if [[ ${http_code} -eq '200' ]]; then
   elif [[ -z "${version}" ]]; then
     echo "${sorted_versions}" | jq "[{ref: last}]" >&3
   else
-    echo "${sorted_versions}" | jq ".[.|to_entries|.[]|select(.value == \"${version}\").key:]" >&3
+    echo "${sorted_versions}" | jq ".[.|to_entries|.[]|select(.value == \"${version}\").key:]|map({ref:.})" >&3
   fi
   exit 0
 else
