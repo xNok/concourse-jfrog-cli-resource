@@ -43,13 +43,18 @@ aql_files="items.find(
     {\"repo\": \"${repository_id}\"},
     {\"type\": \"file\"},
     {\"path\": \"${group_id_path}/${artifact_id}/${version}\"},
-    {\"\$or\": [
-	      {\"name\":{\"\$match\": \"${artifact_id}-${version}.*\"}}"
+    {\"\$or\": ["
 
-for qualifier in $qualifiers_param; do
-  aql_files="${aql_files},
-        {\"name\":{\"\$match\": \"${artifact_id}-${version}-${qualifier}.*\"}}"
-done
+if [ -z "${qualifiers_param}" ]; then
+  aql_files="${aql_files}
+	      {\"name\":{\"\$match\": \"${artifact_id}-${version}*\"}}"
+else
+  for qualifier in $qualifiers_param; do
+    aql_files="${aql_files}
+        {\"name\":{\"\$match\": \"${artifact_id}-${version}-${qualifier}.*\"}},"
+  done
+  aql_files=${aql_files::-1}
+fi
 
 aql_files="${aql_files}
 	    ]
@@ -94,6 +99,7 @@ if [[ ${http_code} -eq '200' ]]; then
     echo "artifact_id: '${artifact_id}'" >&2
     echo "group_id: '${group_id}'" >&2
     echo "repository_id: '${repository_id}'" >&2
+    exit 1
   fi
 else
   echo "Unable to retreive files in artifactory." >&2

@@ -60,7 +60,7 @@ The resource searches for folders under `http(s)://<host>/<repository_id>/<group
 ### `in`: Download the artifacts at the given ref.
 Download the artifacts of the given ref to the destination. It will return the same given ref as version.
 #### Parameters
-* `qualifiers`: *Optional.* The artifacts qualifiers ex: [source,javadoc].
+* `qualifiers`: *Optional.* The artifacts qualifiers ex: [source,javadoc]. If specified, the resource will only retreive the qualified artifacts.
 ### `out`: Push the artifacts to the repository.
 Push the artifacts from the given path to the Artifactory maven repository. The resource will push every files presents in the folder specified in the **path** parameter. The version parameter is optionnal but the resource expect at least a version file containing a version in the format `<timestamp>-<git hash>`. You can easily generate a version of this format from your pipeline using the shell `echo "$(date +'%s')-$(git rev-parse --short HEAD)" > version`.
 #### Parameters
