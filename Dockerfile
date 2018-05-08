@@ -1,6 +1,6 @@
 FROM openjdk:8-jre-alpine
 
-RUN apk add --no-cache curl jq bash
+RUN apk add --no-cache curl jq bash git
 
 ADD assets/ /opt/resource/
 ADD build/libs/maven-versions-sorter.jar /opt/resource/libs/
