@@ -59,7 +59,7 @@ get_version_from_git() {
 
     mkdir repo
     cd repo
-    git init
+    git init > /dev/null
     git remote add origin "${uri}"
     git fetch
     git checkout "origin/${branch}" -- "${file}"

@@ -25,7 +25,7 @@ if { ! [ -z "${uri}" -o -z "${branch}" -o -z "${file}" ]; }; then
   username=$(jq -r '.source.version // {}|.username // ""' < ${payload})
   password=$(jq -r '.source.version // {}|.password // ""' < ${payload})
   version=$(get_version_from_git "${uri}" "${branch}" "${file}" "${private_key}" "${username}" "${password}")
-  jq "[{ref: ${version}}]" >&3
+  jq "[{ref: \"${version}\"}]" >&3
   exit 0
 fi
   
