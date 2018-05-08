@@ -1,0 +1,28 @@
+resource_types: 
+- name: artifactory
+  type: docker-image
+  source:
+    repository: emeraldsquad/artifactory-resource
+    tag: 9d481f7
+
+resources:
+  - name: artifact
+    type: artifactory
+    source:
+      host: https://artifacts.cfzcea.dev.desjardins.com/artifactory
+      api_key: ((artifactory-api-key))
+      repository_id: release-local
+      group_id: com.desjardins.exemplesintegration
+      artifact_id: spring-hello
+
+jobs:
+  - name: fetch-version
+    serial: true
+    public: false
+    plan:
+      - get: artifact
+        params:
+          uri: toto
+          branch: toto
+          file: toto
+          private_key: ((git-key))

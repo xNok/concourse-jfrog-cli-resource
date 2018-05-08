@@ -26,22 +26,8 @@ repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
 group_id=$(jq -r '.source.group_id // ""' < ${payload})
 artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
 host=$(jq -r '.source.host // ""' < ${payload})
+version=$(jq -r '.version.ref // ""' < ${payload})
 qualifiers_param=$(jq -r '.params // {}|.qualifiers // []|join(" ")' < ${payload})
-
-uri=$(jq -r '.params.uri // ""' < ${payload})
-branch=$(jq -r '.params.branch // ""' < ${payload})
-file=$(jq -r '.params.file // ""' < ${payload})
-
-# Check if a git file has been specified
-if { ! [ -z "${uri}" -o -z "${branch}" -o -z "${file}" ]; } then
-  private_key=$(jq -r '.params.private_key // ""' < ${payload})
-  echo "########: ${private_key}"
-  username=$(jq -r '.params.username // ""' < ${payload})
-  password=$(jq -r '.params.password // ""' < ${payload})
-#  fetch_version "${uri}" "${branch}" "${file}" "${private_key}" "${username}" "${password}"
-else
-  version=$(jq -r '.version.ref // ""' < ${payload})
-fi
 
 is_valid 'api_key' "${api_key}"
 is_valid 'repository_id' "${repository_id}"

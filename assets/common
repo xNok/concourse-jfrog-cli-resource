@@ -36,6 +36,38 @@ get_version() {
     return 0
 }
 
+get_version_from_git() {
+    uri=${1}
+    branch=${2}
+    file=${3}
+    private_key=${4}
+    username=${5}
+    password=${6}
+
+    if [ $uri == https* ]; then
+        echo "default login ${username} password ${password}" > ~/.netrc
+        chmod 600 ~/.netrc
+    elif [ $uri == ssh* ]; then
+        mkdir -p ~/.ssh
+        echo "${private_key}" > ~/.ssh/id_rsa
+        chmod 700 ~/.ssh
+        chmod 600 ~/.ssh/id_rsa
+    else
+        echo "Unsupported git protocol. Uri must begin with ssh or https." >&2
+        exit 1
+    fi
+
+    mkdir repo
+    cd repo
+    git init
+    git remote add origin "${uri}"
+    git fetch
+    git checkout "origin/${branch}" -- "${file}"
+
+    echo "$(cat ${file})"
+    return 0
+}
+
 is_valid() {
     field_name=${1}
     field_value=${2}

@@ -14,6 +14,20 @@ payload=$(mktemp ${TMPDIR}/artifactory-resource-request.XXXXXX)
 
 cat > $payload <&0
 
+uri=$(jq -r '.source.version // {}|.uri // ""' < ${payload})
+branch=$(jq -r '.source.version // {}|.branch // "master"' < ${payload})
+file=$(jq -r '.source.version // {}|.file // ""' < ${payload})
+
+# If the source specifies a version file in git. Retreive it and return it as the last version.
+if { ! [ -z "${uri}" -o -z "${branch}" -o -z "${file}" ]; }; then
+  private_key=$(jq -r '.source.version // {}|.file // ""' < ${payload})
+  username=$(jq -r '.source.version // {}|.file // ""' < ${payload})
+  password=$(jq -r '.source.version // {}|.file // ""' < ${payload})
+  version=get_version_from_git "${uri}" "${branch}" "${file}" "${private_key}" "${username}" "${password}"
+  jq "[{ref: ${version}}]" >&3
+  exit 0
+fi
+  
 api_key=$(jq -r '.source.api_key // ""' < ${payload})
 repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
 group_id=$(jq -r '.source.group_id // ""' < ${payload})
