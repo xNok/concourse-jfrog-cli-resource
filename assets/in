@@ -26,8 +26,14 @@ repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
 group_id=$(jq -r '.source.group_id // ""' < ${payload})
 artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
 host=$(jq -r '.source.host // ""' < ${payload})
-version=$(jq -r '.version.ref // ""' < ${payload})
 qualifiers_param=$(jq -r '.params // {}|.qualifiers // []|join(" ")' < ${payload})
+version_file_param=$(jq -r '.params // {}|.version_file_param // ""' < ${payload})
+
+if [ -z $version_file_param ]; then
+  version=$(cat $version_file_param)
+else
+  version=$(jq -r '.version.ref // ""' < ${payload})
+fi
 
 is_valid 'api_key' "${api_key}"
 is_valid 'repository_id' "${repository_id}"
