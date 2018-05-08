@@ -28,16 +28,16 @@ artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
 host=$(jq -r '.source.host // ""' < ${payload})
 qualifiers_param=$(jq -r '.params // {}|.qualifiers // []|join(" ")' < ${payload})
 
-uri=$(jq -r '.version.uri // ""' < ${payload})
-branch=$(jq -r '.version.branch // ""' < ${payload})
-file=$(jq -r '.version.file // ""' < ${payload})
+uri=$(jq -r '.params.uri // ""' < ${payload})
+branch=$(jq -r '.params.branch // ""' < ${payload})
+file=$(jq -r '.params.file // ""' < ${payload})
 
 # Check if a git file has been specified
 if { ! [ -z "${uri}" -o -z "${branch}" -o -z "${file}" ]; } then
-  private_key=$(jq -r '.version.private_key // ""' < ${payload})
+  private_key=$(jq -r '.params.private_key // ""' < ${payload})
   echo "########: ${private_key}"
-  username=$(jq -r '.version.username // ""' < ${payload})
-  password=$(jq -r '.version.password // ""' < ${payload})
+  username=$(jq -r '.params.username // ""' < ${payload})
+  password=$(jq -r '.params.password // ""' < ${payload})
 #  fetch_version "${uri}" "${branch}" "${file}" "${private_key}" "${username}" "${password}"
 else
   version=$(jq -r '.version.ref // ""' < ${payload})
