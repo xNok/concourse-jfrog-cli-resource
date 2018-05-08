@@ -64,6 +64,11 @@ get_version_from_git() {
     git fetch
     git checkout "origin/${branch}" -- "${file}"
 
+    if [[ ! -f "${file}" ]]; then
+        echo "version file '${file}' does not exists" >&2
+        exit 1
+    fi
+
     echo "$(cat ${file})"
     return 0
 }
