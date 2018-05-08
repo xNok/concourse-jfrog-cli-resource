@@ -37,6 +37,9 @@ get_version() {
 }
 
 get_version_from_git() {
+
+    set -e
+
     uri=${1}
     branch=${2}
     file=${3}
@@ -57,7 +60,7 @@ get_version_from_git() {
         exit 1
     fi
 
-    mkdir repo
+    rm -rf repo && mkdir -p repo
     cd repo
     git init > /dev/null
     git remote add origin "${uri}"
