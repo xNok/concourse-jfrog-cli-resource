@@ -44,10 +44,10 @@ get_version_from_git() {
     username=${5}
     password=${6}
 
-    if [ $uri == https* ]; then
+    if [[ $uri == https* ]]; then
         echo "default login ${username} password ${password}" > ~/.netrc
         chmod 600 ~/.netrc
-    elif [ $uri == ssh* ]; then
+    elif [[ $uri == ssh* ]]; then
         mkdir -p ~/.ssh
         echo "${private_key}" > ~/.ssh/id_rsa
         chmod 700 ~/.ssh
