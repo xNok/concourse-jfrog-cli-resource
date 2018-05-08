@@ -21,10 +21,10 @@ file=$(jq -r '.source.version // {}|.file // ""' < ${payload})
 
 # If the source specifies a version file in git. Retreive it and return it as the last version.
 if { ! [ -z "${uri}" -o -z "${branch}" -o -z "${file}" ]; }; then
-  private_key=$(jq -r '.source.version // {}|.file // ""' < ${payload})
-  username=$(jq -r '.source.version // {}|.file // ""' < ${payload})
-  password=$(jq -r '.source.version // {}|.file // ""' < ${payload})
-  version=get_version_from_git "${uri}" "${branch}" "${file}" "${private_key}" "${username}" "${password}"
+  private_key=$(jq -r '.source.version // {}|.private_key // ""' < ${payload})
+  username=$(jq -r '.source.version // {}|.username // ""' < ${payload})
+  password=$(jq -r '.source.version // {}|.password // ""' < ${payload})
+  version=$(get_version_from_git "${uri}" "${branch}" "${file}" "${private_key}" "${username}" "${password}")
   jq "[{ref: ${version}}]" >&3
   exit 0
 fi
