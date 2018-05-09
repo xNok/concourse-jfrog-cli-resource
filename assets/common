@@ -55,6 +55,12 @@ get_version_from_git() {
         echo "${private_key}" > ~/.ssh/id_rsa
         chmod 700 ~/.ssh
         chmod 600 ~/.ssh/id_rsa
+        cat > ~/.ssh/config <<EOF
+StrictHostKeyChecking no
+LogLevel quiet
+EOF
+        chmod 600 ~/.ssh/config
+
     else
         echo "Unsupported git protocol. Uri must begin with ssh or https." >&2
         exit 1
