@@ -43,9 +43,10 @@ get_version_from_git() {
     uri=${1}
     branch=${2}
     file=${3}
-    private_key=${4}
-    username=${5}
-    password=${6}
+    key=${4}
+    private_key=${5}
+    username=${6}
+    password=${7}
 
     if [[ $uri == https* ]]; then
         echo "default login ${username} password ${password}" > ~/.netrc
@@ -78,7 +79,7 @@ EOF
         exit 1
     fi
 
-    echo "$(cat ${file})"
+    jq -r ".\"${key}\"" ${file}
     return 0
 }
 
