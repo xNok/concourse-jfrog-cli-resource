@@ -80,7 +80,7 @@ EOF
     fi
 
     version="$(jq -r ".\"${key}\"" ${file})"
-    if [[ "${version}" -eq 'null' ]]; then
+    if [[ -z "${version}" ]]; then
         echo "Unable to retrieve version for key '${key}' in file '${file}', check you pipeline configuration." >&2
         exit 1
     fi
