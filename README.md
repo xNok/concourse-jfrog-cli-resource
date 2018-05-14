@@ -12,7 +12,7 @@ This integration allows:
 * `repository_id`: *Required.* The repository 
 * `group_id`: *Required.* The maven groupId of your artifact
 * `artifact_id`: *Required.* The maven artifactId of your artifact
-* `version`: *Optional.* Information about the version to deploy. This overrides the default behavior of retrieving the lastest version of an artefact. The resource fetches the version from a JSON file in a git repository.
+* `version`: *Optional.* Information about the version to deploy. This overrides the default behavior of retrieving the latest version of an artefact. The resource fetches the version from a JSON file in a git repository.
     * `uri`: *Required.* The location of the repository.
     * `file`: *Optional.* The name of the JSON file. Default name is `artifact.json`. See the [example](#version-file) below.
     * `branch`: *Optional.* The branch to track. If unset, the `master` branch is used.
