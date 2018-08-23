@@ -12,14 +12,6 @@ This integration allows:
 * `repository_id`: *Required.* The repository 
 * `group_id`: *Required.* The maven groupId of your artifact
 * `artifact_id`: *Required.* The maven artifactId of your artifact
-* `version`: *Optional.* Information about the version to deploy. This overrides the default behavior of retrieving the latest version of an artefact. The resource fetches the version from a JSON file in a git repository.
-    * `uri`: *Required.* The location of the repository.
-    * `file`: *Optional.* The name of the JSON file. Default name is `artifact.json`. See the [example](#version-file) below.
-    * `branch`: *Optional.* The branch to track. If unset, the `master` branch is used.
-    * `key`: *Optional.* The key of the JSON entry for the version in the file. Default key is `version`. See the [example](#version-file) below.
-    * `username`: *Optional.* Username for HTTP(S) auth when fetching. This is needed when only HTTP/HTTPS protocol for git is available (which does not support private key auth) and auth is required.
-    * `password`: *Optional.* Password for HTTP(S) auth when fetching.
-    * `private_key`: *Optional.* Private key to use when fetching.
 ### Example
 Resource Type Configuration:
 ``` yaml
@@ -43,33 +35,6 @@ resources:
       host: "https://emerald.squad.com/artifactory"
       repository_id: repo-local
 ```
-<a name="version-file"></a>Get a specific version using a JSON version file:
-``` yaml
-resources:
-  - name: artifact
-    type: artifactory
-    source:
-      host: "https://emerald.squad.com/artifactory"
-      api_key: <API KEY>
-      repository_id: repo-local
-      group_id: emerald.squad
-      artifact_id: wonderful-artifact
-      version:
-        uri: ssh://git@git.emerald.squad.com/wonderful-artifact.git
-        file: artifact-versions.json
-        key: wonderful-artifact
-        private_key: |
-          -----BEGIN RSA PRIVATE KEY-----
-          ...
-          -----END RSA PRIVATE KEY-----
-```
-The JSON file in the git repo would look like this:
-``` json
-{
-  "wonderful-artifact": "1.0.0"
-}
-```
-
 *Note:* Artifactory resource is using Artifactory Query Language (AQL) to extract metadata from the repositories. Currently, AQL can only extract data that resides in your instance of Artifactory, so it runs on local repositories, remote repository caches and virtual repositories. So, if your artifact is stored on a remote repository, you must specify the cache repository instead.
 
 Retreiving artifacts:

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-#set -x
 
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
@@ -15,21 +14,6 @@ payload=$(mktemp ${TMPDIR}/artifactory-resource-request.XXXXXX)
 
 cat > $payload <&0
 
-uri=$(jq -r '.source.version // {}|.uri // ""' < ${payload})
-branch=$(jq -r '.source.version // {}|.branch // "master"' < ${payload})
-file=$(jq -r '.source.version // {}|.file // "artifact.json"' < ${payload})
-
-# If the source specifies a version file in git. Retreive it and return it as the last version.
-if { ! [ -z "${uri}" -o -z "${branch}" -o -z "${file}" ]; }; then
-  key=$(jq -r '.source.version // {}|.key // "version"' < ${payload})
-  private_key=$(jq -r '.source.version // {}|.private_key // ""' < ${payload})
-  username=$(jq -r '.source.version // {}|.username // ""' < ${payload})
-  password=$(jq -r '.source.version // {}|.password // ""' < ${payload})
-  version=$(get_version_from_git "${uri}" "${branch}" "${file}" "${key}" "${private_key}" "${username}" "${password}")
-  echo "[{\"ref\": \"${version}\"}]" >&3
-  exit 0
-fi
-  
 api_key=$(jq -r '.source.api_key // ""' < ${payload})
 repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
 group_id=$(jq -r '.source.group_id // ""' < ${payload})

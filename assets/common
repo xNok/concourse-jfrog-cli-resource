@@ -36,58 +36,6 @@ get_version() {
     return 0
 }
 
-get_version_from_git() {
-
-    set -e
-
-    uri=${1}
-    branch=${2}
-    file=${3}
-    key=${4}
-    private_key=${5}
-    username=${6}
-    password=${7}
-
-    if [[ $uri == https* ]]; then
-        echo "default login ${username} password ${password}" > ~/.netrc
-        chmod 600 ~/.netrc
-    elif [[ $uri == ssh* ]]; then
-        mkdir -p ~/.ssh
-        echo "${private_key}" > ~/.ssh/id_rsa
-        chmod 700 ~/.ssh
-        chmod 600 ~/.ssh/id_rsa
-        cat > ~/.ssh/config <<EOF
-StrictHostKeyChecking no
-LogLevel quiet
-EOF
-        chmod 600 ~/.ssh/config
-
-    else
-        echo "Unsupported git protocol. Uri must begin with ssh or https." >&2
-        exit 1
-    fi
-
-    rm -rf repo && mkdir -p repo
-    cd repo
-    git init > /dev/null
-    git remote add origin "${uri}"
-    git fetch
-    git checkout "origin/${branch}" -- "${file}"
-
-    if [[ ! -f "${file}" ]]; then
-        echo "version file '${file}' does not exists" >&2
-        exit 1
-    fi
-
-    version="$(jq -r ".\"${key}\"" ${file})"
-    if [[ -z "${version}" ]]; then
-        echo "Unable to retrieve version for key '${key}' in file '${file}', check you pipeline configuration." >&2
-        exit 1
-    fi
-    echo "${version}"
-    return 0
-}
-
 is_valid() {
     field_name=${1}
     field_value=${2}
