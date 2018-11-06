@@ -1,8 +1,21 @@
-FROM openjdk:8-jre-alpine
+FROM golang:alpine AS builder
 
-RUN apk add --no-cache curl jq bash
+COPY go/ /go/
+ENV CGO_ENABLED 0
+ENV GOOS linux 
+ENV GOARCH amd64
+RUN go build -a -ldflags="-w -s" -o /go/bin/sort-versions github.com/emerald-squad/artifactory-resource/sort-versions
+RUN go test github.com/emerald-squad/artifactory-resource/sort-versions/versioning
 
-ADD assets/ /opt/resource/
-ADD build/libs/maven-versions-sorter.jar /opt/resource/libs/
+FROM alpine:edge AS resource
 
-RUN echo -e '#!/bin/bash\n\njava -jar /opt/resource/libs/maven-versions-sorter.jar "$@"' > /usr/bin/sort-versions && chmod uog+x /usr/bin/sort-versions
+RUN apk --no-cache add \
+      curl \
+      jq \
+      bash \
+;
+
+COPY --from=builder /go/bin/sort-versions /usr/local/bin/
+COPY assets/ /opt/resource/
+
+FROM resource

@@ -1,0 +1,11 @@
+{
+	"ImportPath": "github.com/gobeila/sort-versions",
+	"GoVersion": "go1.10",
+	"GodepVersion": "v80",
+	"Deps": [
+		{
+			"ImportPath": "github.com/golang-collections/collections/stack",
+			"Rev": "604e922904d35e97f98a774db7881f049cd8d970"
+		}
+	]
+}

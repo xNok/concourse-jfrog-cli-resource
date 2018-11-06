@@ -20,8 +20,6 @@ jobs:
       trigger: true
   - task: get-version
     file: artifactory-resource-source/ci/tasks/get-version.yml
-  - task: build
-    file: artifactory-resource-source/ci/tasks/build.yml
   - put: docker-hub
     params:
       build: build
