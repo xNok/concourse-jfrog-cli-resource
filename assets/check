@@ -51,7 +51,7 @@ result=$(curl \
 http_code="${result##*$'\n'}"
 req_output=$(echo "${result}" | sed '$d')
 if [[ ${http_code} -eq '200' ]]; then
-  sorted_versions="$(sort-versions -j "$(echo "${req_output}" | jq '[.results[].name]')")"
+  sorted_versions="$(sort-versions --json "$(echo "${req_output}" | jq '[.results[].name]')")"
   total=$(echo "${req_output}" | jq '.range.total')
   if [[ "${total}" == "0" ]]; then
     echo "[]" >&3
