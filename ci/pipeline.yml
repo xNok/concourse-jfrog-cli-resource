@@ -2,8 +2,18 @@ resources:
 - name: artifactory-resource-source
   type: git
   source: 
-    uri: https://github.com/emerald-squad/artifactory-resource.git
+    uri: git@github.com:emerald-squad/artifactory-resource.git
     branch: 'master'
+
+- name: version
+  type: semver
+  source:
+    driver: git
+    uri: git@github.com:emerald-squad/artifactory-resource.git
+    branch: 'version'
+    file: version
+    private_key: ((github-key))
+
 
 - name: docker-hub
   type: docker-image
@@ -15,23 +25,37 @@ resources:
 jobs:
 - name: publish
   plan:
-  - get: artifactory-resource-source
-    trigger: true
-  - task: get-version
-    file: artifactory-resource-source/ci/tasks/get-version.yml
+  - aggregate:
+    - get: artifactory-resource-source
+      trigger: true
+    - get: version
+      params:
+        bump: patch
   - put: docker-hub
     params:
       build: artifactory-resource-source
       tag: version/version
+      tag_as_latest: false
+  - put: version
+    params: 
+      file: version/version
+
 - name: promote
   plan:
-  - get: artifactory-resource-source
-    passed:
-    - publish
-  - task: get-version
-    file: artifactory-resource-source/ci/tasks/get-version.yml
+  - aggregate:
+    - get:  artifactory-resource-source
+      passed: [ publish ]
+    - get: docker-hub
+      passed: [ publish ]
+      params:
+        save: true
   - put: docker-hub
     params:
-      build: artifactory-resource-source
-      tag: version/version
+      load: docker-hub
       tag_as_latest: true
+
+- name: major-bump
+  plan:
+  - put: version
+    params:
+      bump: major
