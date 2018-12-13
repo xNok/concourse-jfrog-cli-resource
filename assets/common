@@ -56,7 +56,7 @@ is_file_complies_with_artifact_specs() {
     file=${3}
 
     if [[ $file != ${artifact_id}-${version}* ]]; then
-        echo -e "artifact ${RED}${file}${NC} doesn't complies with artifact source specs (expected ${GREEN}${artifact_id}-${version}[-classifier].packaging${NC})" >&2
+        echo -e "artifact ${RED}${file}${NC} doesn't comply with artifact source specs (expected ${GREEN}${artifact_id}-${version}[-classifier].packaging${NC})" >&2
         exit 1
     fi
 }
