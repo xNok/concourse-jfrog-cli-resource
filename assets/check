@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
@@ -55,7 +55,8 @@ if [[ ${http_code} -eq '200' ]]; then
   total=$(echo "${req_output}" | jq '.range.total')
   if [[ "${total}" == "0" ]]; then
     echo "[]" >&3
-  elif [[ -z "${version}" ]]; then
+  elif [[ -z "${version}" || "false" == $(echo "${sorted_versions}" | jq "contains([\"${version}\"])") ]]; then
+    # If the version provided by Concourse is empty or for any reason doesn't exists in artifactory, return the latest version.
     echo "${sorted_versions}" | jq "[{ref: last}]" >&3
   else
     echo "${sorted_versions}" | jq ".[.|to_entries|.[]|select(.value == \"${version}\").key:]|map({ref:.})" >&3
