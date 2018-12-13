@@ -29,6 +29,8 @@ jobs:
     - get: artifactory-resource-source
       trigger: true
     - get: version
+      params:
+        bump: patch
   - put: docker-hub
     params:
       build: artifactory-resource-source
@@ -37,8 +39,6 @@ jobs:
   - put: version
     params: 
       file: version/version
-      params:
-        bump: patch
 
 - name: promote
   plan:
