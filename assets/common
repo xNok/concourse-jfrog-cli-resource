@@ -46,6 +46,17 @@ is_valid() {
     fi
 }
 
+is_file_complies_with_artifact_specs() {
+    artifact_id=${1}
+    version=${2}
+    file=${3}
+
+    if [[ $file != ${artifact_id}-${version}* ]]; then
+        echo "artifact ${file} doesn't complies with artifact source specs (expected ${artifact_id}-${version}[-classifier].packaging)" >&2
+        exit 1
+    fi
+}
+
 get_latest_version() {
     payload=${1}
 

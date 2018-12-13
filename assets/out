@@ -46,6 +46,12 @@ metadata_files='[]'
 
 for abs_file in $files; do
   file=$(basename ${abs_file})
+  is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
+done
+
+for abs_file in $files; do
+  file=$(basename ${abs_file})
+
   sha1=$(sha1sum "${abs_file}" | head -c 40)
   sha256=$(sha256sum "${abs_file}" | head -c 64)
 
