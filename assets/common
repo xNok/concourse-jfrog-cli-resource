@@ -1,3 +1,7 @@
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
 strip_last_slash() {
     path=${1}
     if [[ "${path}" == */ ]]; then
@@ -52,7 +56,7 @@ is_file_complies_with_artifact_specs() {
     file=${3}
 
     if [[ $file != ${artifact_id}-${version}* ]]; then
-        echo "artifact ${file} doesn't complies with artifact source specs (expected ${artifact_id}-${version}[-classifier].packaging)" >&2
+        echo -e "artifact ${RED}${file}${NC} doesn't complies with artifact source specs (expected ${GREEN}${artifact_id}-${version}[-classifier].packaging${NC})" >&2
         exit 1
     fi
 }
