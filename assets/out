@@ -17,22 +17,28 @@ if [ -z "${destination}" ]; then
   exit 1
 fi
 
+cd ${destination}
+
 payload=$(mktemp ${TMPDIR}/artifactory-resource-request.XXXXXX)
 
 cat > $payload <&0
 
+# source
+host=$(jq -r '.source.host // ""' < ${payload})
 api_key=$(jq -r '.source.api_key // ""' < ${payload})
 repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
 group_id=$(jq -r '.source.group_id // ""' < ${payload})
 artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
-path_param=$(jq -r '.params.path // ""' < ${payload})
-host=$(jq -r '.source.host // ""' < ${payload})
 
+# params
+path_param=$(jq -r '.params.path // ""' < ${payload})
+build_publish=$(jq -r '.params.build_publish // empty' < ${payload})
+
+is_valid 'host' "${host}"
 is_valid 'api_key' "${api_key}"
 is_valid 'repository_id' "${repository_id}"
 is_valid 'group_id' "${group_id}"
 is_valid 'artifact_id' "${artifact_id}"
-is_valid 'host' "${host}"
 
 host=$(strip_last_slash "${host}")
 path_param=$(strip_last_slash "${path_param}")
@@ -41,53 +47,73 @@ folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
-files=$(find ${destination}/${path_param} -type f -name "*" -not -name "version" -not -name "_remote.repositories")
+files=$(find ${destination}/${path_param} -type f -name "*" -not -name "version" -not -name "build" -not -name "_remote.repositories")
 metadata_files='[]'
 
 for abs_file in $files; do
   file=$(basename ${abs_file})
   is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
-done
-
-for abs_file in $files; do
-  file=$(basename ${abs_file})
-
-  sha1=$(sha1sum "${abs_file}" | head -c 40)
-  sha256=$(sha256sum "${abs_file}" | head -c 64)
-
-  result=$(curl \
-    -k \
-    -o - \
-    -X PUT \
-    -H "X-JFrog-Art-Api:${api_key}" \
-    -H "X-Checksum-Deploy:true" \
-    -H "X-Checksum-Sha1:${sha1}" \
-    -H "X-Checksum-Sha256: ${sha256}" \
-    --write-out "\n%{http_code}" \
-    --silent \
-    ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
-
-  http_code="${result##*$'\n'}"
-  req_output=$(echo "${result}" | sed '$d')
-
-  if [[ ${http_code} -eq '404' ]]; then
-    req_output=$(curl \
-      -k \
-      -H "X-JFrog-Art-Api:${api_key}" \
-      -H "X-Checksum-Sha1:${sha1}" \
-      -H "X-Checksum-Sha256: ${sha256}" \
-      -T "${abs_file}" \
-      --silent \
-      ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
-  elif [[ ${http_code} -ne '201' ]]; then
-    echo "An error occured while trynig to create artifact ${file} by checksum" >&2
-    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}" >&2
-    echo "Error:${req_output}" >&2
-    exit 1
-  fi
-
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
 done
+
+jfrog rt config --url=$host --apikey=$api_key --interactive=false
+
+if [[ -z "${build_publish}" ]]; then
+
+  # Upload artifact without build-info
+  cd ${destination}/${path_param}
+    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories"
+  cd ${destination}
+
+else
+
+  # Collect Build Information (https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-CollectingBuildInformation)
+
+  # build-publish params
+  build_name=$(jq -r '.build_name // empty' <<< ${build_publish})
+  build_number_file=$(jq -r '.build_number // empty' <<< ${build_publish})
+  add_git=$(jq -r '.add_git // empty' <<< ${build_publish})
+  env_include=$(jq -r '.env_include // "*"' <<< ${build_publish})
+  env_exclude=$(jq -r '.env_exclude // "*password*;*secret*;*key*;*token*"' <<< ${build_publish})
+
+  is_valid 'build_name' "${build_name}"
+
+  # Add 'buildInfo.env.' prefix, otherwise any pattern that does not begins with '*' will not match.
+  if [[ -n ${env_include} ]] ; then
+    env_include=$(sed 's/^/buildInfo.env./' <<< ${env_include})
+    env_include=$(sed 's/;/;buildInfo.env./g' <<< ${env_include})
+  fi
+  if [[ -n ${env_exclude} ]] ; then
+    env_exclude=$(sed 's/^/buildInfo.env./' <<< ${env_exclude})
+    env_exclude=$(sed 's/;/;buildInfo.env./g' <<< ${env_exclude})
+  fi
+  
+  # If exist, read build_number from file
+  build_number_file=${build_number_file:=${path_param}/build}
+  if [[ -f "${destination}/${build_number_file}" ]]; then
+    build_number=$(cat ${destination}/${build_number_file} | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+  fi  
+  build_number="${build_number:-$BUILD_ID}"
+
+  build_url=$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+
+  # Collecting git revision and remote url...
+  if [[ -n "${add_git}" ]] && [[ -d "${destination}/${add_git}" ]]; then
+    jfrog rt build-add-git $build_name $build_number ${destination}/${add_git}
+  fi
+
+  # Collecting environment variables...
+  jfrog rt build-collect-env $build_name $build_number
+
+  # Upload artifact...
+  cd ${destination}/${path_param}
+    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories" --build-name=$build_name --build-number=$build_number
+  cd ${destination}
+
+  # Publish build-info...
+  jfrog rt build-publish $build_name $build_number --build-url=$build_url --env-include=$env_include --env-exclude=$env_exclude
+
+fi
 
 metadata_files="$(echo ${metadata_files} | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
 metadata_folder=$(folder_metadata "${payload}" "${destination}")
