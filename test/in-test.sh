@@ -1,40 +1,16 @@
 #!/bin/bash
+set -x
 
-if [ ! "$BASH_VERSION" ] ; then
-    echo "Please do not use sh to run this script ($0), just execute it directly" 1>&2
+request=$1
+user=$2
+
+user=$2
+if [[ -z $user || -z $request ]]; then
+    echo "Required arguments: <request file> <docker user>"
     exit 1
 fi
 
-set -o allexport
-source .env
-set +o allexport
+# Interpolating the json in bash:
+# (. ./test/.env && eval "echo \"$(cat $request | sed 's/"/\\"/g' )\"")
 
-# execute script from the test directory.
-TEST_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-
-# create destination directory if not exist
-mkdir -p $TEST_DIR/destination
-
-if [[ -f "${TEST_DIR}/destination/artifact/version" ]] ; then
-    VERSION=$(cat ${TEST_DIR}/destination/artifact/version)
-else
-    VERSION="-1"
-fi
-
-jq -n "
-{
-    source: {
-        host : \"${ARTFY_URL}\",
-        api_key : \"${ARTFY_API_KEY}\",
-        repository_id : \"${ARTFY_REPO_ID}\",
-        group_id : \"${ARTFY_GROUP_ID}\",
-        artifact_id : \"${ARTFY_ARTIFACT_ID}\"
-    },
-    params: {
-        qualifiers: [\"evidence\"]
-    },
-    version: {
-        ref: \"${VERSION}\"
-    }
-}
-" | tee | $TEST_DIR/../assets/in $TEST_DIR/destination | jq .
+(. ./test/.env && eval "echo \"$(cat $request | sed 's/"/\\"/g' )\"") | docker run --rm -i $user/artifactory-resource /opt/resource/in

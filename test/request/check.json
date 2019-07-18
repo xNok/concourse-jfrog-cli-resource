@@ -1,0 +1,12 @@
+{
+    "source": {
+        "host" : "$ARTFY_URL",
+        "api_key" : "$ARTFY_API_KEY",
+        "repository_id" : "$ARTFY_REPO_ID",
+        "group_id" : "$ARTFY_GROUP_ID",
+        "artifact_id" : "$ARTFY_ARTIFACT_ID"
+    },
+    "version": {
+        "ref": "$VERSION"
+    }
+}
