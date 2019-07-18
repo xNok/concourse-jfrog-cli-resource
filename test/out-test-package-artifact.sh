@@ -5,15 +5,11 @@ if [ ! "$BASH_VERSION" ] ; then
     exit 1
 fi
 
-set -o allexport
-source .env
-set +o allexport
-
 # execute script from the test directory.
 TEST_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # package artifact
-source $TEST_DIR/package-artifact.sh
+source $TEST_DIR/package-artifact_package-artifact.sh
 
 jq -n "
 {
@@ -25,7 +21,8 @@ jq -n "
     artifact_id: \"${ARTFY_ARTIFACT_ID}\"
   },
   params: {
-    path: \"artifact\"
+    path: \"artifact\",
+    package_artifact: true
   }
 }
 " | tee | $TEST_DIR/../assets/out ${TEST_DIR}/destination | jq .

@@ -5,6 +5,10 @@ if [ ! "$BASH_VERSION" ] ; then
     exit 1
 fi
 
+set -o allexport
+source .env
+set +o allexport
+
 # execute script from the test directory.
 TEST_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 

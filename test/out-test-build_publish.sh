@@ -25,7 +25,12 @@ jq -n "
     artifact_id: \"${ARTFY_ARTIFACT_ID}\"
   },
   params: {
-    path: \"artifact\"
+    path: \"artifact\",
+    build_publish: {
+      build_name: \"${PARAM_BUILD_NAME}\",
+      add_git: \"${PARAM_GIT_REPO}\",
+      env_include: \"ARTFY_*;BUILD_*;ATC_*\",
+      env_exclude: \"ARTFY_API_KEY\"}
   }
 }
 " | tee | $TEST_DIR/../assets/out ${TEST_DIR}/destination | jq .
