@@ -82,9 +82,14 @@ Download the artifacts of the given ref to the destination. It will return the s
 * `qualifiers`: *Optional.* The artifacts classifiers ex: [source,javadoc]. If specified, the resource will only retreive the qualified artifacts.
 ### `out`: Push the artifacts to the repository.
 Push the artifacts from the given path to the Artifactory maven repository. The resource will push every files presents in the folder specified in the **path** parameter. The version parameter is optionnal but the resource expect at least a version file containing a version in the format `<timestamp>-<git hash>`. You can easily generate a version of this format from your pipeline using the shell `echo "$(date +'%s')-$(git rev-parse --short HEAD)" > version`.
+
+The artefact est expected to follow this formating: `${artifact_id}-${version}[-classifier].packaging${NC}`. The option `package_artifact` auto format the artefict name.
 #### Parameters
 * `path`: *(required)* The path of the files to push to the repository.
 * `version`: *(optional)* The path to a version file. Defaults to `<path parameter>/version`.
+* `package_artifact`: *(optional)* The script will make sure your files comply with the spec
+  * `bin` : *(required)* Regex to define wich artifact to package as `${artifact_id}-${version}.packaging`
+  * `evidence`: *(optional)* Regex to define wich artifact to package as `${artifact_id}-${version}[-classifier].packaging` all artefact that do not match that regex will be removed
 * `build_publish`: *(optional)* Publish build info.
   * `build_name` : *(required)* The build name.
   * `build_number` : *(optional)*  The path to a build file. defaults to `<path parameter>/build` if it exist, otherwise defaults to concourse-ci `BUILD_ID` variable.
