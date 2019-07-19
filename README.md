@@ -89,7 +89,7 @@ The artefact est expected to follow this formating: `${artifact_id}-${version}[-
 * `version`: *(optional)* The path to a version file. Defaults to `<path parameter>/version`.
 * `package_artifact`: *(optional)* The script will make sure your files comply with the spec
   * `bin` : *(required)* Regex to define wich artifact to package as `${artifact_id}-${version}.packaging`
-  * `evidence`: *(optional)* Regex to define wich artifact to package as `${artifact_id}-${version}[-classifier].packaging` all artefact that do not match that regex will be removed
+  * `evidences`: *(optional)* Regex to define wich artifact to package as `${artifact_id}-${version}[-classifier].packaging` all artefact that do not match that regex will be removed
 * `build_publish`: *(optional)* Publish build info.
   * `build_name` : *(required)* The build name.
   * `build_number` : *(optional)*  The path to a build file. defaults to `<path parameter>/build` if it exist, otherwise defaults to concourse-ci `BUILD_ID` variable.
