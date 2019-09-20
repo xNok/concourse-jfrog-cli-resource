@@ -16,8 +16,8 @@ This integration allows:
 Resource Type Configuration:
 ``` yaml
 resource_types: 
-  - 
-    name: artifactory
+  - name: artifactory
+    type: docker-image
     source: 
       repository: emeraldsquad/artifactory-resource
       type: docker-image
@@ -25,8 +25,7 @@ resource_types:
 Resource configuration for an artifact:
 ``` yaml
 resources: 
-  - 
-    name: my-artifact
+  - name: my-artifact
     type: artifactory
     source: 
       api_key: <API KEY>
