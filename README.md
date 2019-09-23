@@ -20,7 +20,6 @@ resource_types:
     type: docker-image
     source: 
       repository: emeraldsquad/artifactory-resource
-      type: docker-image
 ```
 Resource configuration for an artifact:
 ``` yaml
