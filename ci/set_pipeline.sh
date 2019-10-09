@@ -6,4 +6,4 @@ ALIAS=${1:-emerald-squad}
 PIPELINE_NAME=${2:-artifactory-resource}
 
 fly -t "${ALIAS}" sp -n -p "${PIPELINE_NAME}" -c $DIR/pipeline.yml
-fly -t "${ALIAS}" ep -p "$PIPELINE_NAME"
+fly -t "${ALIAS}" up -p "$PIPELINE_NAME"
