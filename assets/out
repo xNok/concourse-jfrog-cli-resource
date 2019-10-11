@@ -21,18 +21,36 @@ payload=$(mktemp ${TMPDIR}/artifactory-resource-request.XXXXXX)
 
 cat > $payload <&0
 
+# source
+host=$(jq -r '.source.host // ""' < ${payload})
 api_key=$(jq -r '.source.api_key // ""' < ${payload})
 repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
 group_id=$(jq -r '.source.group_id // ""' < ${payload})
 artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
-path_param=$(jq -r '.params.path // ""' < ${payload})
-host=$(jq -r '.source.host // ""' < ${payload})
 
+is_valid 'host' "${host}"
 is_valid 'api_key' "${api_key}"
 is_valid 'repository_id' "${repository_id}"
 is_valid 'group_id' "${group_id}"
 is_valid 'artifact_id' "${artifact_id}"
-is_valid 'host' "${host}"
+
+# params
+path_param=$(jq -r '.params.path // ""' < ${payload})
+build_publish=$(jq -r '.params.build_publish' < ${payload})
+build_name=$(jq -r '.params.build_name // empty' < ${payload})
+build_git_url=$(jq -r '.build_git_url // empty' <<< ${build_publish})
+build_env_include=$(jq -r '.env_include // "*"' <<< ${build_publish})
+build_env_exclude=$(jq -r '.env_exclude // "*password*;*secret*;*key*;*token*"' <<< ${build_publish})
+
+[[ ${build_publish} != false ]]    && build_publish=true
+[[ -z "$build_name" ]]             && build_name="${artifact_id}-build"
+
+# local
+build_number=$BUILD_ID
+build_timestamp=$(date -u +%s%N | cut -c 1-13)
+build_url=$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+
+
 
 host=$(strip_last_slash "${host}")
 path_param=$(strip_last_slash "${path_param}")
@@ -48,6 +66,10 @@ for abs_file in $files; do
   file=$(basename ${abs_file})
   is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
 done
+
+if [[ ${build_publish} == true ]] ; then
+  build_properties=";build.name=${build_name};build.number=${build_number};build.timestamp=${build_timestamp}"
+fi
 
 for abs_file in $files; do
   file=$(basename ${abs_file})
@@ -69,7 +91,7 @@ for abs_file in $files; do
 
   http_code="${result##*$'\n'}"
   req_output=$(echo "${result}" | sed '$d')
-
+  
   if [[ ${http_code} -eq '404' ]]; then
     req_output=$(curl \
       -k \
@@ -78,7 +100,7 @@ for abs_file in $files; do
       -H "X-Checksum-Sha256: ${sha256}" \
       -T "${abs_file}" \
       --silent \
-      ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
+      ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}${build_properties})
   elif [[ ${http_code} -ne '201' ]]; then
     echo "An error occured while trynig to create artifact ${file} by checksum" >&2
     echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}" >&2
