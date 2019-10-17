@@ -17,8 +17,8 @@ build_env_exclude=$(jq -r '.env_exclude // "password|pword|pwd|secret|key|token"
 
 # local
 build_number=${BUILD_ID}
-build_started=$(date -u +%Y-%m-%dT%T.%3N%z)
-build_timestamp=$(date -d "${build_started}" +%s%3N)
+build_started=$(date -u +%Y-%m-%dT%T.000%z)
+build_timestamp=$(date -d "${build_started}" +%s000)
 concourse_version=$(curl ${ATC_EXTERNAL_URL}/api/v1/info --silent | jq -r .version)
 build_url=${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
 
