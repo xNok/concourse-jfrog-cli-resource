@@ -84,6 +84,7 @@ for abs_file in $files; do
   req_output=$(echo "${result}" | sed '$d')
   
   if [[ ${http_code} -eq '404' ]]; then
+    echo -e "[Info] Uploading artifact: ${GREEN}${file}${NC}"
     req_output=$(curl \
       -k \
       -H "X-JFrog-Art-Api:${api_key}" \
@@ -109,6 +110,7 @@ for abs_file in $files; do
 done
 
 if [[ ${upload_build} == true ]] ; then
+  echo -e "[Info] Deploying build info..."
   no_content=$(curl \
     -k \
     -X PUT \
@@ -117,6 +119,7 @@ if [[ ${upload_build} == true ]] ; then
     --upload-file "${BUILD_INFO}" \
     --silent \
     ${host}/api/build)
+    echo -e "[Info] Build info successfully deployed. Browse it in Artifactory under ${GREEN}${host}/webapp/builds/${build_name}/${build_number}${NC}"
 fi
 
 metadata_files="$(echo ${metadata_files} | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
