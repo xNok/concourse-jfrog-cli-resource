@@ -50,10 +50,10 @@ BUILD_INFO=$(mktemp -t build_info.XXXXXX)
 echo ${buildinfo_template} | jq . > ${BUILD_INFO}
 
 # collect environnement variables
-env_keys=$(env | grep -Po '^[^=]*' | grep -Pi "${build_env_include}" | grep -Pvi "${build_env_exclude}")
+env_keys=$(env | grep -Eo '^[^=]*' | grep -Ei "${build_env_include}" | grep -Evi "${build_env_exclude}")
 
 for key in ${env_keys}; do
-  value=$(env | grep -Po "(?<=^${key}=).*$")
+  value=$(env | grep -E "^${key}=" | sed -e "s/^${key}=//g")
 
   echo $(jq \
     --argjson prop '{"properties": {"buildInfo.env.'$key'" : "'$value'"}}' \
