@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# ensure bash
 if [ ! "$BASH_VERSION" ] ; then
-    echo "Please do not use sh to run this script ($0), just execute it directly" 1>&2
+    echo "Please use bash to run this script: ($0)" 1>&2
     exit 1
 fi
 

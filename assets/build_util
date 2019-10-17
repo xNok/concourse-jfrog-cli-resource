@@ -54,8 +54,10 @@ env_keys=$(env | grep -Po '^[^=]*' | grep -Pi "${build_env_include}" | grep -Pvi
 for key in ${env_keys}; do
   value=$(env | grep -Po "(?<=^${key}=).*$")
 
-  jq --argjson prop '{"properties": {"buildInfo.env.'$key'" : "'$value'"}}' \
-  '. * $prop' ${BUILD_INFO} | sponge ${BUILD_INFO}
+  echo $(jq \
+    --argjson prop '{"properties": {"buildInfo.env.'$key'" : "'$value'"}}' \
+    '. * $prop' ${BUILD_INFO}) \
+    > ${BUILD_INFO}
 done
 
 # ------------------------------
@@ -66,9 +68,10 @@ function add_module() {
   local module_index=$(get_module_index ${module_id})
 
   if [[ -z ${module_index} ]] ; then
-    jq \
+    echo $(jq \
     --argjson new_module '{"properties": {}, "id": "'${module_id}'", "artifacts": []}' \
-    '.modules += [$new_module]' ${BUILD_INFO} | sponge ${BUILD_INFO}
+    '.modules += [$new_module]' ${BUILD_INFO}) \
+    > ${BUILD_INFO}
   fi
 }
 
@@ -90,10 +93,11 @@ function add_artifact() {
   local artifact_index=$(get_artifact_index ${module_id} ${artifact_name})
 
   if [[ -z ${artifact_index} ]] ; then
-    jq \
+    echo $(jq \
     --argjson module_index $(get_module_index ${module_id}) \
     --argjson new_artifact '{"name": "'${artifact_name}'", "sha1": "'${sha1}'", "sha256": "'${sha256}'", "md5": "'${md5}'"}' \
-    '.modules[$module_index].artifacts += [$new_artifact]' ${BUILD_INFO} | sponge ${BUILD_INFO}
+    '.modules[$module_index].artifacts += [$new_artifact]' ${BUILD_INFO}) \
+    > ${BUILD_INFO}
   fi
 }
 
