@@ -36,21 +36,9 @@ is_valid 'artifact_id' "${artifact_id}"
 
 # params
 path_param=$(jq -r '.params.path // ""' < ${payload})
-build_publish=$(jq -r '.params.build_publish' < ${payload})
-build_name=$(jq -r '.params.build_name // empty' < ${payload})
-build_git_url=$(jq -r '.build_git_url // empty' <<< ${build_publish})
-build_env_include=$(jq -r '.env_include // "*"' <<< ${build_publish})
-build_env_exclude=$(jq -r '.env_exclude // "*password*;*secret*;*key*;*token*"' <<< ${build_publish})
+upload_build=$(jq -r '.params.build_publish // empty' < ${payload})
 
-[[ ${build_publish} != false ]]    && build_publish=true
-[[ -z "$build_name" ]]             && build_name="${artifact_id}-build"
-
-# local
-build_number=$BUILD_ID
-build_timestamp=$(date -u +%s%N | cut -c 1-13)
-build_url=$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-
-
+[[ -n ${upload_build} ]] && upload_build=true || upload_build=false
 
 host=$(strip_last_slash "${host}")
 path_param=$(strip_last_slash "${path_param}")
@@ -67,7 +55,8 @@ for abs_file in $files; do
   is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
 done
 
-if [[ ${build_publish} == true ]] ; then
+if [[ ${upload_build} == true ]] ; then
+  source $(dirname $0)/build_util  
   build_properties=";build.name=${build_name};build.number=${build_number};build.timestamp=${build_timestamp}"
 fi
 
@@ -76,6 +65,7 @@ for abs_file in $files; do
 
   sha1=$(sha1sum "${abs_file}" | head -c 40)
   sha256=$(sha256sum "${abs_file}" | head -c 64)
+  md5=$(md5sum "${abs_file}" | head -c 32)
 
   result=$(curl \
     -k \
@@ -85,6 +75,7 @@ for abs_file in $files; do
     -H "X-Checksum-Deploy:true" \
     -H "X-Checksum-Sha1:${sha1}" \
     -H "X-Checksum-Sha256: ${sha256}" \
+    -H "X-Checksum-Md5: ${md5}" \
     --write-out "\n%{http_code}" \
     --silent \
     ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
@@ -98,18 +89,35 @@ for abs_file in $files; do
       -H "X-JFrog-Art-Api:${api_key}" \
       -H "X-Checksum-Sha1:${sha1}" \
       -H "X-Checksum-Sha256: ${sha256}" \
+      -H "X-Checksum-Md5: ${md5}" \
       -T "${abs_file}" \
       --silent \
       ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}${build_properties})
+
+    if [[ ${upload_build} == true ]] ; then
+      add_artifact ${artifact_id} ${file} ${sha1} ${sha256} ${md5}
+    fi
+
   elif [[ ${http_code} -ne '201' ]]; then
-    echo "An error occured while trynig to create artifact ${file} by checksum" >&2
-    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}" >&2
+    echo "An error occured while trying to create artifact ${file} by checksum" >&2
+    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -H "X-Checksum-Md5: ${md5}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}" >&2
     echo "Error:${req_output}" >&2
     exit 1
   fi
 
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
 done
+
+if [[ ${upload_build} == true ]] ; then
+  no_content=$(curl \
+    -k \
+    -X PUT \
+    -H "X-JFrog-Art-Api:${api_key}" \
+    -H "Content-Type: application/json" \
+    --upload-file "${BUILD_INFO}" \
+    --silent \
+    ${host}/api/build)
+fi
 
 metadata_files="$(echo ${metadata_files} | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
 metadata_folder=$(folder_metadata "${payload}" "${destination}")

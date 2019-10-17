@@ -26,6 +26,8 @@ rm README.md
 # create version
 echo ${VERSION} > artifact/version
 
+echo $(pwgen 40 1) > ../revision
+
 # create build
 if [[ -f build ]]; then
   BUILD_NUMBER=$(cat build | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')

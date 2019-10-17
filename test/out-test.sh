@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ ! "$BASH_VERSION" ] ; then
-    echo "Please do not use sh to run this script ($0), just execute it directly" 1>&2
+    echo "Please use bash to run this script: ($0)" 1>&2
     exit 1
 fi
 
@@ -27,10 +27,10 @@ jq -n "
   params: {
     path: \"artifact\",
     build_publish: {
-      build_name: \"${PARAM_BUILD_NAME}\",
-      add_git: \"${PARAM_GIT_REPO}\",
-      env_include: \"ARTFY_*;BUILD_*;ATC_*\",
+      git_url: \"${PARAM_GIT_REPO}\",
+      git_rev: \"${PARAM_GIT_REV}\",
+      env_include: \"ARTFY|BUILD|ATC\",
       env_exclude: \"ARTFY_API_KEY\"}
   }
 }
-" | ${ASSETS}/out .  | jq . | tee output.json | jq .
+" | ${ASSETS}/out . | jq . | tee output.json | jq .
