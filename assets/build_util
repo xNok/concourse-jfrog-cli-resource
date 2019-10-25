@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# default empty build_publish
-[[ -z ${payload} ]]             && payload=$(jq -n '{}')
-
 # params
 build_publish=$(jq -r '.params.build_publish // empty' < ${payload})
 build_name=$(jq -r '.build_name // empty' <<< ${build_publish})
