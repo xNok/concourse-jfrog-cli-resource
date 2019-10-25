@@ -34,8 +34,10 @@ jq -n '{
 
 source ${ASSETS}/build_util
 
-add_artifact patate frite $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
-add_artifact patate douce $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
-add_artifact patate chips $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
+add_artifact patato fries $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
+add_artifact fruits grape $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
+add_artifact patato sweet $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
+add_artifact fruits peach $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
+add_artifact patato chips $(pwgen 40 1) $(pwgen 64 1) $(pwgen 32 1)
 
 cat ${BUILD_INFO} | jq .

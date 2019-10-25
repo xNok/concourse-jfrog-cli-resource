@@ -40,7 +40,7 @@ echo $BUILD_NUMBER > build
 export BUILD_ID=${BUILD_NUMBER}
 
 # create evidence
-template="{\"timestamp\":\"$(echo $(date -u +%s))\",\"produit\":\"poc\",\"composant\":\"poc-artifact\",\"branche\":\"master\",\"statut\":\"OK\",\"metriques\":[{\"nom\":\"couverture\",\"valeur\":\"100.0\",\"cible\":\"80\",\"statut\":\"OK\"},{\"nom\":\"fiabilite\",\"valeur\":\"A\",\"cible\":\"A\",\"statut\":\"OK\"},{\"nom\":\"securite\",\"valeur\":\"A\",\"cible\":\"A\",\"statut\":\"OK\"},{\"nom\":\"maintenabilite\",\"valeur\":\"A\",\"cible\":\"A\",\"statut\":\"OK\"}]}"
+template="{\"timestamp\":\"$(echo $VERSION)\",\"produit\":\"poc\",\"composant\":\"poc-artifact\",\"branche\":\"master\",\"statut\":\"OK\",\"metriques\":[{\"nom\":\"couverture\",\"valeur\":\"100.0\",\"cible\":\"80\",\"statut\":\"OK\"},{\"nom\":\"fiabilite\",\"valeur\":\"A\",\"cible\":\"A\",\"statut\":\"OK\"},{\"nom\":\"securite\",\"valeur\":\"A\",\"cible\":\"A\",\"statut\":\"OK\"},{\"nom\":\"maintenabilite\",\"valeur\":\"A\",\"cible\":\"A\",\"statut\":\"OK\"}]}"
 
 jq -n ${template} > artifact/$ARTFY_ARTIFACT_ID-$VERSION-evidence.json
 
