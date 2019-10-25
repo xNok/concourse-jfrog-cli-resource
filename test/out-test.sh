@@ -26,6 +26,7 @@ jq -n "
   },
   params: {
     path: \"artifact\",
+    build_upload: true,
     build_publish: {
       git_url: \"${PARAM_GIT_REPO}\",
       git_rev: \"${PARAM_GIT_REV}\",

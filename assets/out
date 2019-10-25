@@ -36,9 +36,9 @@ is_valid 'artifact_id' "${artifact_id}"
 
 # params
 path_param=$(jq -r '.params.path // ""' < ${payload})
-upload_build=$(jq -r '.params.build_publish // empty' < ${payload})
+build_upload=$(jq -r '.params.build_upload // empty' < ${payload})
 
-[[ -n ${upload_build} ]] && upload_build=true || upload_build=false
+[[ ${build_upload} != true ]] && build_upload=false
 
 host=$(strip_last_slash "${host}")
 path_param=$(strip_last_slash "${path_param}")
@@ -55,7 +55,7 @@ for abs_file in $files; do
   is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
 done
 
-if [[ ${upload_build} == true ]] ; then
+if [[ ${build_upload} == true ]] ; then
   source $(dirname $0)/build_util  
   build_properties=";build.name=${build_name};build.number=${build_number};build.timestamp=${build_timestamp}"
 fi
@@ -82,7 +82,7 @@ for abs_file in $files; do
 
   http_code="${result##*$'\n'}"
   req_output=$(echo "${result}" | sed '$d')
-  
+
   if [[ ${http_code} -eq '404' ]]; then
     echo -e "[Info] Uploading artifact: ${GREEN}${file}${NC}"
     req_output=$(curl \
@@ -95,7 +95,7 @@ for abs_file in $files; do
       --silent \
       ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}${build_properties})
 
-    if [[ ${upload_build} == true ]] ; then
+    if [[ ${build_upload} == true ]] ; then
       add_artifact ${artifact_id} ${file} ${sha1} ${sha256} ${md5}
     fi
 
@@ -109,17 +109,29 @@ for abs_file in $files; do
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
 done
 
-if [[ ${upload_build} == true ]] ; then
+if [[ ${build_upload} == true ]] ; then
   echo -e "[Info] Deploying build info..."
-  no_content=$(curl \
+  result=$(curl \
     -k \
     -X PUT \
     -H "X-JFrog-Art-Api:${api_key}" \
     -H "Content-Type: application/json" \
+    --write-out "\n%{http_code}" \
     --upload-file "${BUILD_INFO}" \
     --silent \
     ${host}/api/build)
+
+  http_code="${result##*$'\n'}"
+  req_output=${result%$'\n'*}
+
+  if [[ ${http_code} -ne '204' ]]; then
+    echo -e "Build info could not be uploaded."
+    echo "Request: curl -k -X PUT -H 'X-JFrog-Art-Api:*****' -H "Content-Type: application/json" --write-out \"\\\n%{http_code}\" --upload-file "${BUILD_INFO}" --silent ${host}/api/build" >&2
+    echo "Error:${req_output}" >&2
+    exit 1
+  else
     echo -e "[Info] Build info successfully deployed. Browse it in Artifactory under ${GREEN}${host}/webapp/builds/${build_name}/${build_number}${NC}"
+  fi
 fi
 
 metadata_files="$(echo ${metadata_files} | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
