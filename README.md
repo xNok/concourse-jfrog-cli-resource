@@ -119,5 +119,5 @@ Optionally upload build information by setting the `upload_build` flag to `true`
   - `git_rev`: *(optional)* One of:
     - The git revision of the source of the artifact.
     - Path to a file containing the git revision of the source of the artifact.
-  - `env_include` : *(optional)* List of case insensitive patterns in the form of `"value1|value2|..."` Only environment variables match those patterns will be included. Default to `"."`
-  - `env_exclude` : *(optional)* List of case insensitive patterns in the form of `"value1|value2|..."`. Environment variables match those patterns will be excluded. Default to `"password|pword|pwd|secret|key|token"`
+  - `env_include` : *(optional)* List of case insensitive patterns in the form of `"pattern1|pattern2|..."` Only environment variables match those patterns will be included. Default to `"."`
+  - `env_exclude` : *(optional)* List of case insensitive patterns in the form of `"pattern1|pattern2|..."`. Environment variables match those patterns will be excluded. Default to `"password|pword|pwd|secret|key|token"`
