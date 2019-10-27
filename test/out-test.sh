@@ -15,23 +15,24 @@ source ${REPO}/test/package-artifact.sh
 
 cd ${DESTINATION_OUT}
 
-jq -n "
+jq -n '
 {
   source: {
-    host: \"${ARTFY_URL}\",
-    api_key: \"${ARTFY_API_KEY}\",
-    repository_id: \"${ARTFY_REPO_ID}\",
-    group_id: \"${ARTFY_GROUP_ID}\",
-    artifact_id: \"${ARTFY_ARTIFACT_ID}\"
+    host: "'${ARTFY_URL}'",
+    api_key: "'${ARTFY_API_KEY}'",
+    repository_id: "'${ARTFY_REPO_ID}'",
+    group_id: "'${ARTFY_GROUP_ID}'",
+    artifact_id: "'${ARTFY_ARTIFACT_ID}'"
   },
   params: {
-    path: \"artifact\",
+    path: "artifact",
     build_upload: true,
     build_publish: {
-      git_url: \"${PARAM_GIT_REPO}\",
-      git_rev: \"${PARAM_GIT_REV}\",
-      env_include: \"ARTFY|BUILD|ATC\",
-      env_exclude: \"ARTFY_API_KEY\"}
+      git_url: "'${PARAM_GIT_REPO}'",
+      git_rev: "'${PARAM_GIT_REV}'",
+      env_include: "ARTFY|BUILD|ATC",
+      env_exclude: "ARTFY_API_KEY"
+    }
   }
 }
-" | ${ASSETS}/out . | jq . | tee output.json | jq .
+' | ${ASSETS}/out . | jq . | tee output.json | jq .
