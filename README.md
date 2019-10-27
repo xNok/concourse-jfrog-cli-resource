@@ -62,6 +62,30 @@ Pushing local commits to the repo:
     path: artifacts
 ```
 
+Publish build information: _(using default build_publish params)_
+
+``` yaml
+- put: my-artifact
+  params:
+    path: artifacts
+    upload_build: true
+```
+
+Publish build information: _(use all optional params)_
+
+``` yaml
+- put: my-artifact
+  params:
+    path: artifacts
+    upload_build: true
+    build_publish:
+      build_name: wonderful-artifact-build
+      git_url: <GIT URL>
+      git_rev: artifacts/revision
+      env_include: "BUILD|ATC"
+      env_exclude: "API_KEY"
+```
+
 ## Behavior
 
 ### `check`: Check for new artifacts
@@ -82,5 +106,16 @@ Push the artifacts from the given path to the Artifactory maven repository. The 
 
 #### Parameters
 
-- `path`: *Required.* The path of the files to push to the repository.
-- `version`: *Optional.* The path to a version file. Defaults to `<path parameter>/version`.
+- `path`: *(required).* The path of the files to push to the repository.
+- `version`: *(optional).* The path to a version file. Defaults to `<path parameter>/version`.
+- `upload_build`: *(optional)* Whether or not to upload build info. Defaults to `false`.
+- `build_publish`: *(optional)* Upload build info parameters.
+  - `build_name` : *(optional)* The build name. Defaults to `<source.artifact_id>-build`.
+  - `git_url`: *(optional)* One of:
+    - The git url of the source of the artifact.
+    - Path to a file containing the git url of the source of the artifact.
+  - `git_rev`: *(optional)* One of:
+    - The git revision of the source of the artifact.
+    - Path to a file containing the git revision of the source of the artifact.
+  - `env_include` : *(optional)* List of case insensitive patterns in the form of `"value1|value2|..."` Only environment variables match those patterns will be included. Default to `.`
+  - `env_exclude` : *(optional)* List of case insensitive patterns in the form of `"value1|value2|..."`. Environment variables match those patterns will be excluded. Default to `password|pword|pwd|secret|key|token`
