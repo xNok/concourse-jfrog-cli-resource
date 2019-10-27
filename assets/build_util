@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # params
-build_publish=$(jq -r '.params.build_publish // empty' < ${payload})
+build_publish=$(jq -r '.params.build_publish // {}' < ${payload})
 build_name=$(jq -r '.build_name // empty' <<< ${build_publish})
 build_git_url=$(jq -r '.git_url // empty' <<< ${build_publish})
 build_git_rev=$(jq -r '.git_rev // empty' <<< ${build_publish})
@@ -24,7 +24,7 @@ build_url=${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELIN
 buildinfo_template=$(jq -n '{
   properties : {},
   version : "1.0.0",
-  name : "'${build_name}'",
+  name : "'"${build_name}"'",
   number : "'${build_number}'",
   type : "GENERIC",
   buildAgent : {
@@ -53,7 +53,7 @@ for key in ${env_keys}; do
   value=$(env | grep -E "^${key}=" | sed -e "s/^${key}=//g")
 
   echo $(jq \
-    --argjson prop '{"properties": {"buildInfo.env.'$key'" : "'$value'"}}' \
+    --argjson prop '{"properties": {"buildInfo.env.'${key}'" : "'"${value}"'"}}' \
     '. * $prop' ${BUILD_INFO}) \
     > ${BUILD_INFO}
 done
