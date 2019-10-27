@@ -104,6 +104,8 @@ Download the artifacts of the given ref to the destination. It will return the s
 
 Push the artifacts from the given path to the Artifactory maven repository. The resource will push every files presents in the folder specified in the **path** parameter. The version parameter is optionnal but the resource expect at least a version file containing a version in the format `<timestamp>-<git hash>`. You can easily generate a version of this format from your pipeline using the shell `echo "$(date +'%s')-$(git rev-parse --short HEAD)" > version`.
 
+Optionally upload build info for the artifacts by setting the `upload_build` flag to `true`. The ressource will produce a build.json file and [upload](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-BuildUpload) it to artifactory. The build name will default to `<source.artifact_id>-build` and the build number will be set to [concourse's `$BUILD_ID` metadata value](https://concourse-ci.org/implementing-resource-types.html#resource-metadata).
+
 #### Parameters
 
 - `path`: *(required).* The path of the files to push to the repository.
