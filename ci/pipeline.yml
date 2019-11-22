@@ -48,6 +48,7 @@ jobs:
   serial_groups: [docker-push]
   plan:
   - in_parallel:
+    - get: repo
     - get: docker-hub
       passed: [prerelease-tag]
       params:
@@ -60,6 +61,11 @@ jobs:
       load: docker-hub
       tag_file: version/version
       tag_as_latest: true
+  - put: repo
+    params:
+      repository: repo
+      tag: version/version
+      only_tag: true
   - put: bump-patch
     resource: version
     params:
