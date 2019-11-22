@@ -21,18 +21,24 @@ payload=$(mktemp ${TMPDIR}/artifactory-resource-request.XXXXXX)
 
 cat > $payload <&0
 
+# source
+host=$(jq -r '.source.host // ""' < ${payload})
 api_key=$(jq -r '.source.api_key // ""' < ${payload})
 repository_id=$(jq -r '.source.repository_id // ""' < ${payload})
 group_id=$(jq -r '.source.group_id // ""' < ${payload})
 artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
-path_param=$(jq -r '.params.path // ""' < ${payload})
-host=$(jq -r '.source.host // ""' < ${payload})
 
+is_valid 'host' "${host}"
 is_valid 'api_key' "${api_key}"
 is_valid 'repository_id' "${repository_id}"
 is_valid 'group_id' "${group_id}"
 is_valid 'artifact_id' "${artifact_id}"
-is_valid 'host' "${host}"
+
+# params
+path_param=$(jq -r '.params.path // ""' < ${payload})
+build_upload=$(jq -r '.params.build_upload // empty' < ${payload})
+
+[[ ${build_upload} != true ]] && build_upload=false
 
 host=$(strip_last_slash "${host}")
 path_param=$(strip_last_slash "${path_param}")
@@ -49,11 +55,17 @@ for abs_file in $files; do
   is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
 done
 
+if [[ ${build_upload} == true ]] ; then
+  source $(dirname $0)/build_util  
+  build_properties=";build.name=${build_name};build.number=${build_number};build.timestamp=${build_timestamp}"
+fi
+
 for abs_file in $files; do
   file=$(basename ${abs_file})
 
   sha1=$(sha1sum "${abs_file}" | head -c 40)
   sha256=$(sha256sum "${abs_file}" | head -c 64)
+  md5=$(md5sum "${abs_file}" | head -c 32)
 
   result=$(curl \
     -k \
@@ -63,6 +75,7 @@ for abs_file in $files; do
     -H "X-Checksum-Deploy:true" \
     -H "X-Checksum-Sha1:${sha1}" \
     -H "X-Checksum-Sha256: ${sha256}" \
+    -H "X-Checksum-Md5: ${md5}" \
     --write-out "\n%{http_code}" \
     --silent \
     ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
@@ -71,23 +84,55 @@ for abs_file in $files; do
   req_output=$(echo "${result}" | sed '$d')
 
   if [[ ${http_code} -eq '404' ]]; then
+    echo -e "[Info] Uploading artifact: ${GREEN}${file}${NC}"
     req_output=$(curl \
       -k \
       -H "X-JFrog-Art-Api:${api_key}" \
       -H "X-Checksum-Sha1:${sha1}" \
       -H "X-Checksum-Sha256: ${sha256}" \
+      -H "X-Checksum-Md5: ${md5}" \
       -T "${abs_file}" \
       --silent \
-      ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file})
+      ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}${build_properties})
+
+    if [[ ${build_upload} == true ]] ; then
+      add_artifact ${artifact_id} ${file} ${sha1} ${sha256} ${md5}
+    fi
+
   elif [[ ${http_code} -ne '201' ]]; then
-    echo "An error occured while trynig to create artifact ${file} by checksum" >&2
-    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}" >&2
+    echo "An error occured while trying to create artifact ${file} by checksum" >&2
+    echo "Request: curl -k -H 'X-JFrog-Art-Api:*****' -H "X-Checksum-Sha1:${sha1}" -H "X-Checksum-Sha256: ${sha256}" -H "X-Checksum-Md5: ${md5}" -T "${abs_file}" --silent ${host}/${repository_id}/${group_id_path}/${artifact_id}/${version}/${file}" >&2
     echo "Error:${req_output}" >&2
     exit 1
   fi
 
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
 done
+
+if [[ ${build_upload} == true ]] ; then
+  echo -e "[Info] Deploying build info..."
+  result=$(curl \
+    -k \
+    -X PUT \
+    -H "X-JFrog-Art-Api:${api_key}" \
+    -H "Content-Type: application/json" \
+    --write-out "\n%{http_code}" \
+    --upload-file "${BUILD_INFO}" \
+    --silent \
+    ${host}/api/build)
+
+  http_code="${result##*$'\n'}"
+  req_output=${result%$'\n'*}
+
+  if [[ ${http_code} -ne '204' ]]; then
+    echo -e "Build info could not be uploaded."
+    echo "Request: curl -k -X PUT -H 'X-JFrog-Art-Api:*****' -H "Content-Type: application/json" --write-out \"\\\n%{http_code}\" --upload-file "${BUILD_INFO}" --silent ${host}/api/build" >&2
+    echo "Error:${req_output}" >&2
+    exit 1
+  else
+    echo -e "[Info] Build info successfully deployed. Browse it in Artifactory under ${GREEN}${host}/webapp/builds/${build_name}/${build_number}${NC}"
+  fi
+fi
 
 metadata_files="$(echo ${metadata_files} | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
 metadata_folder=$(folder_metadata "${payload}" "${destination}")

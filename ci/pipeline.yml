@@ -28,6 +28,8 @@ resources:
 jobs:
 
 - name: prerelease-tag
+  serial: true
+  serial_groups: [docker-push]
   plan:
   - in_parallel:
     - get: repo
@@ -42,11 +44,12 @@ jobs:
       tag_as_latest: false
 
 - name: release-tag
+  serial: true
+  serial_groups: [docker-push]
   plan:
   - in_parallel:
     - get: docker-hub
-      passed:
-      - prerelease-tag
+      passed: [prerelease-tag]
       params:
         save: true
     - put: version

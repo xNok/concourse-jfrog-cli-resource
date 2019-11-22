@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# params
+build_publish=$(jq -r '.params.build_publish // {}' < ${payload})
+build_name=$(jq -r '.build_name // empty' <<< ${build_publish})
+build_git_url=$(jq -r '.git_url // empty' <<< ${build_publish})
+build_git_rev=$(jq -r '.git_rev // empty' <<< ${build_publish})
+build_env_include=$(jq -r '.env_include // "."' <<< ${build_publish})
+build_env_exclude=$(jq -r '.env_exclude // "password|pword|pwd|secret|key|token"' <<< ${build_publish})
+
+[[ -z ${build_name} ]]          && build_name="${artifact_id}-build"
+[[ -f ${build_git_url} ]]       && build_git_url=$(cat ${build_git_url} | awk 'NR==1{print $1}')
+[[ -f ${build_git_rev} ]]       && build_git_rev=$(cat ${build_git_rev} | awk 'NR==1{print $1}')
+
+# local
+build_number=${BUILD_ID}
+date_now=$(date -u +%s)
+build_started=$(date -d "@${date_now}" +%Y-%m-%dT%T.000%z)
+build_timestamp=$(date -d "@${date_now}" +%s000)
+concourse_version=$(curl ${ATC_EXTERNAL_URL}/api/v1/info --silent | jq -r .version)
+build_url=${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+
+# template
+buildinfo_template=$(jq -n '{
+  properties : {},
+  version : "1.0.0",
+  name : "'"${build_name}"'",
+  number : "'${build_number}'",
+  type : "GENERIC",
+  buildAgent : {
+    name : "artifactory-resource",
+    version : "2.0.6"
+  },
+  agent : {
+    name : "concourse-ci",
+    version : "'${concourse_version}'"
+  },
+  started : "'${build_started}'",
+  url : "'${build_url}'",
+  vcsUrl : "'${build_git_url}'",
+  vcsRevision : "'${build_git_rev}'",
+  modules : []
+}
+')
+
+BUILD_INFO=$(mktemp -t build_info.XXXXXX)
+echo ${buildinfo_template} | jq . > ${BUILD_INFO}
+
+# collect environnement variables
+env_keys=$(env | grep -Eo '^[^=]*' | grep -Ei "${build_env_include}" | grep -Evi "${build_env_exclude}")
+
+for key in ${env_keys}; do
+  value=$(env | grep -E "^${key}=" | sed -e "s/^${key}=//g")
+
+  echo $(jq \
+    --argjson prop '{"properties": {"buildInfo.env.'${key}'" : "'"${value}"'"}}' \
+    '. * $prop' ${BUILD_INFO}) \
+    > ${BUILD_INFO}
+done
+
+# ------------------------------
+
+function add_module() {
+
+  local module_id=$1
+  local module_index=$(get_module_index ${module_id})
+
+  if [[ -z ${module_index} ]] ; then
+    echo $(jq \
+    --argjson new_module '{"properties": {}, "id": "'${module_id}'", "artifacts": []}' \
+    '.modules += [$new_module]' ${BUILD_INFO}) \
+    > ${BUILD_INFO}
+  fi
+}
+
+function get_module_index() {
+  jq --arg module_id $1 '.modules | map(.id) | index($module_id) // empty' ${BUILD_INFO}
+}
+
+
+function add_artifact() {
+
+  local module_id=$1
+  local artifact_name=$2
+  local sha1=$3
+  local sha256=$4
+  local md5=$5
+
+  add_module ${module_id}
+  
+  local artifact_index=$(get_artifact_index ${module_id} ${artifact_name})
+
+  if [[ -z ${artifact_index} ]] ; then
+    echo $(jq \
+    --argjson module_index $(get_module_index ${module_id}) \
+    --argjson new_artifact '{"name": "'${artifact_name}'", "sha1": "'${sha1}'", "sha256": "'${sha256}'", "md5": "'${md5}'"}' \
+    '.modules[$module_index].artifacts += [$new_artifact]' ${BUILD_INFO}) \
+    > ${BUILD_INFO}
+  fi
+}
+
+function get_artifact_index() {
+
+  local module_id=$1
+  local artifact_name=$2
+
+  jq \
+  --argjson module_index $(get_module_index ${module_id}) \
+  --arg artifact_name ${artifact_name} \
+  '.modules[$module_index].artifacts | map(.name) | index($artifact_name) // empty' ${BUILD_INFO}
+}
