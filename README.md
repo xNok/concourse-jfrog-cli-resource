@@ -68,7 +68,7 @@ Publish build information: _(using default build_publish params)_
 - put: my-artifact
   params:
     path: artifacts
-    upload_build: true
+    build_upload: true
 ```
 
 Publish build information: _(use all optional params)_
@@ -77,7 +77,7 @@ Publish build information: _(use all optional params)_
 - put: my-artifact
   params:
     path: artifacts
-    upload_build: true
+    build_upload: true
     build_publish:
       build_name: wonderful-artifact-build
       git_url: <GIT URL>
@@ -104,13 +104,13 @@ Download the artifacts of the given ref to the destination. It will return the s
 
 Push the artifacts from the given path to the Artifactory maven repository. The resource will push every files presents in the folder specified in the **path** parameter. The version parameter is optionnal but the resource expect at least a version file containing a version in the format of a valid maven versions (See https://cwiki.apache.org/confluence/display/MAVENOLD/Versioning for details).
 
-Optionally upload build information by setting the `upload_build` flag to `true`. The resource will produce a build.json file and [upload it to artifactory](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-BuildUpload). The build name will default to `<source.artifact_id>-build` and the build number will be set to [concourse's `$BUILD_ID` metadata value](https://concourse-ci.org/implementing-resource-types.html#resource-metadata).
+Optionally upload build information by setting the `build_upload` flag to `true`. The resource will produce a build.json file and [upload it to artifactory](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-BuildUpload). The build name will default to `<source.artifact_id>-build` and the build number will be set to [concourse's `$BUILD_ID` metadata value](https://concourse-ci.org/implementing-resource-types.html#resource-metadata).
 
 #### Parameters
 
 - `path`: *(required).* The path of the files to push to the repository.
 - `version`: *(optional).* The path to a version file. Defaults to `<path parameter>/version`.
-- `upload_build`: *(optional)* Whether or not to upload build info. Defaults to `false`.
+- `build_upload`: *(optional)* Whether or not to upload build info. Defaults to `false`.
 - `build_publish`: *(optional)* Upload build info parameters.
   - `build_name` : *(optional)* The build name. Defaults to `<source.artifact_id>-build`.
   - `git_url`: *(optional)* One of:
