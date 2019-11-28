@@ -57,7 +57,8 @@ if [ ! -z "$(ls -A $destination)" ]; then
 
   # TODO add to metadat the list of item
   metadata_folder=$(folder_metadata "${payload}" "${destination}" "${version}")
-  echo $(echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ".")}") >&3
+  metadata_files=$(echo $(ls "${destination}" | jq -R -s -c 'split("\n")' | jq 'map(select(length > 0))') | jq '[.|to_entries[]|{name: "file_\(.key)", value}]')
+  echo $(echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}") >&3
   exit 0
 else
   echo "Unable to retreive files in artifactory" >&2
