@@ -13,4 +13,4 @@ fi
 # Interpolating the json in bash:
 # (. ./test/.env && eval "echo \"$(cat $request | sed 's/"/\\"/g' )\"")
 
-(. ./test/.env && eval "echo \"$(cat $request | sed 's/"/\\"/g' )\"") | docker run --rm -i $user/artifactory-resource /opt/resource/in
+(. ./test/.env && eval "echo \"$(cat $request | sed 's/"/\\"/g' )\"") | docker run --rm -i $user/artifactory-resource /opt/resource/in /tmp
