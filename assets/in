@@ -57,7 +57,7 @@ if [ ! -z "$(ls -A $destination)" ]; then
 
   # TODO add to metadat the list of item
   metadata_folder=$(folder_metadata "${payload}" "${destination}" "${version}")
-  metadata_files=$(echo $(ls "${destination}" | jq -R -s -c 'split("\n")' | jq 'map(select(length > 0))') | jq '[.|to_entries[]|{name: "file_\(.key)", value}]')
+  metadata_files=$(echo $(find ${destination} -type f -name "*" -not -name "version" -not -name "artifactory-resource-request*" -not -name "build" -not -name "_remote.repositories" -exec basename {} \; | jq -R -s -c 'split("\n")' | jq 'map(select(length > 0))') | jq '[.|to_entries[]|{name: "file_\(.key)", value}]')
   echo $(echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}") >&3
   exit 0
 else
