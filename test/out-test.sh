@@ -14,5 +14,5 @@ fi
 # (. ./test/.env && eval "echo \"$(cat $request | sed 's/"/\\"/g' )\"")
 
 (. ./test/.env && eval "echo \"$(cat $request | sed 's/"/\\"/g' )\"") | docker run --rm -i \
--v "${pwd}/test/artifacts:/tmp/artifact" \
+-v "${pwd}/test/tmp:/tmp" \
 $user/artifactory-resource /opt/resource/out /tmp
