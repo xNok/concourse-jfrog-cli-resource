@@ -1,0 +1,10 @@
+version: 1
+issues:
+  serverID: artifactory-server
+  trackerName: JIRA
+  regexp: (.+-[0-9]+)(?:\s|:)(.+)
+  keyGroupIndex: 1
+  summaryGroupIndex: 2
+  trackerUrl: '' # A remplire
+  aggregate: true
+  aggregationStatus: RELEASED

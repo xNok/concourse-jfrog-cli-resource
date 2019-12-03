@@ -48,7 +48,7 @@ folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
-files=$(find ${destination}/${path_param} -type f -name "*" -not -name "version" -not -name "build" -not -name "_remote.repositories")
+files=$(find ${destination}/${path_param} -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 metadata_files='[]'
 
 for abs_file in $files; do
@@ -76,7 +76,7 @@ for abs_file in $files; do
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
 done
 
-jfrog rt config --url=$host --apikey=$api_key --interactive=false
+jfrog rt c artifactory-server --url=$host --apikey=$api_key --interactive=false
 
 if [[ -z "${build_publish}" ]]; then
 
@@ -93,6 +93,7 @@ else
   build_name=$(jq -r '.build_name // empty' <<< ${build_publish})
   build_number_file=$(jq -r '.build_number // empty' <<< ${build_publish})
   add_git=$(jq -r '.add_git // empty' <<< ${build_publish})
+  add_git_issue_config_file=$(jq -r '.add_git_issue_config_file // empty' <<< ${build_publish})
   env_include=$(jq -r '.env_include // "*"' <<< ${build_publish})
   env_exclude=$(jq -r '.env_exclude // "*password*;*secret*;*key*;*token*"' <<< ${build_publish})
 
@@ -118,8 +119,12 @@ else
   build_url=$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
 
   # Collecting git revision and remote url...
+  git_config=''
   if [[ -n "${add_git}" ]] && [[ -d "${destination}/${add_git}" ]]; then
-    jfrog rt build-add-git $build_name $build_number ${destination}/${add_git}
+    if [[ -n "${add_git_issue_config_file}" ]] && [[ -e "${destination}/${add_git}/${add_git_issue_config_file}" ]]; then
+      git_config="--config ${destination}/${add_git}/${add_git_issue_config_file}"
+    fi
+    jfrog rt bag ${git_config} "${build_name}" "${build_number}" "${destination}/${add_git}"
   fi
 
   # Collecting environment variables...
@@ -127,7 +132,7 @@ else
 
   # Upload artifact...
   cd ${destination}/${path_param}
-    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories" --build-name=$build_name --build-number=$build_number
+    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories;*.git*" --build-name=$build_name --build-number=$build_number
   cd ${destination}
 
   # Publish build-info...
