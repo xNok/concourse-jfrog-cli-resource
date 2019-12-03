@@ -1,0 +1,20 @@
+{
+    "source": {
+        "host": "${ARTFY_URL}",
+        "api_key": "${ARTFY_API_KEY}",
+        "repository_id": "${ARTFY_REPO_ID}",
+        "group_id": "${ARTFY_GROUP_ID}",
+        "artifact_id": "${ARTFY_ARTIFACT_ID}"
+      },
+    "params": {
+        "path": "artifact",
+        "build_publish": {
+            "build_name": "${PARAM_BUILD_NAME}",
+            "build_number": "${PARAM_BUILD_NUMBER}",
+            "add_git": "${PARAM_GIT_REPO}",
+            "add_git_issue_config_file": "${PARAM_GIR_REPO_CONFIG_FILE}",
+            "env_include": "ARTFY_*;BUILD_*;ATC_*",
+            "env_exclude": "ARTFY_API_KEY"
+        }
+    }
+}
