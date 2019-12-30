@@ -48,27 +48,27 @@ folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
-files=$(find ${destination}/${path_param} -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
+files=$(find "${destination}/${path_param}" -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 metadata_files='[]'
 
 for abs_file in $files; do
-  file=$(basename ${abs_file})
+  file=$(basename "${abs_file}")
   if [[ ! -z "${package_artifact}" ]]; then
     package_artifact_bin=$(jq -r '.bin // empty' <<< ${package_artifact})
     package_artifact_evidences=$(jq -r '.evidences // empty' <<< ${package_artifact})
-    if [[ ${file} =~ "$package_artifact_bin"  ]]; then
+    if [[ ${file} =~ $package_artifact_bin  ]]; then
       filename=$(basename -- "$file")
       packaging="${filename##*.}"
       echo "Packaging file: ${file} as ${artifact_id}-${version}.$packaging"
-      mv ${destination}/${path_param}/${file} ${destination}/${path_param}/${artifact_id}-${version}.$packaging
+      mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}.$packaging"
       file=${artifact_id}-${version}
-    elif [[ ${file} =~ "$package_artifact_evidences" ]]; then
+    elif [[ ${file} =~ $package_artifact_evidences ]]; then
       echo "Packaging file: ${file} as ${artifact_id}-${version}-${file}"
-      mv ${destination}/${path_param}/${file} ${destination}/${path_param}/${artifact_id}-${version}-${file}
+      mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}-${file}"
       file=${artifact_id}-${version}-${file}
     else
       echo "Removing: ${file}"
-      rm ${destination}/${path_param}/${file}
+      rm "${destination}/${path_param}/${file}"
       continue
     fi
   fi
@@ -76,18 +76,20 @@ for abs_file in $files; do
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
 done
 
-jfrog rt c artifactory-server --url=$host --apikey=$api_key --interactive=false
+jfrog rt c artifactory-server --url="$host" --apikey="$api_key" --interactive=false
 
 if [[ -z "${build_publish}" ]]; then
 
+  echo "Upload artifact without build-info"
+
   # Upload artifact without build-info
-  cd ${destination}/${path_param}
-    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories"
-  cd ${destination}
+  cd "${destination}/${path_param}"
+    jfrog rt upload "*" "$repository_id/$group_id_path/$artifact_id/$version/" --flat=false  --exclude-patterns="version;build;_remote.repositories"
+  cd "${destination}"
 
 else
 
-  # Collect Build Information (https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-CollectingBuildInformation)
+  echo "Collect Build Information see: https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-CollectingBuildInformation"
 
   # build-publish params
   build_name=$(jq -r '.build_name // empty' <<< ${build_publish})
@@ -116,31 +118,41 @@ else
   fi  
   build_number="${build_number:-$BUILD_ID}"
 
-  build_url=$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+  build_url="$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
 
   # Collecting git revision and remote url...
   git_config=''
   if [[ -n "${add_git}" ]] && [[ -d "${destination}/${add_git}" ]]; then
+
+    echo "Collecting git revision and remote url"
+
     if [[ -n "${add_git_issue_config_file}" ]] && [[ -e "${destination}/${add_git}/${add_git_issue_config_file}" ]]; then
+      
+      echo "collecting the list of tracked project issues"
+      
       git_config="--config ${destination}/${add_git}/${add_git_issue_config_file}"
     fi
-    jfrog rt bag ${git_config} "${build_name}" "${build_number}" "${destination}/${add_git}"
+    jfrog rt bag "${git_config}" "${build_name}" "${build_number}" "${destination}/${add_git}"
   fi
 
   # Collecting environment variables...
-  jfrog rt build-collect-env $build_name $build_number
+  jfrog rt build-collect-env "$build_name" "$build_number"
 
   # Upload artifact...
-  cd ${destination}/${path_param}
-    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories;*.git*" --build-name=$build_name --build-number=$build_number
-  cd ${destination}
+  cd "${destination}/${path_param}"
 
-  # Publish build-info...
-  jfrog rt build-publish $build_name $build_number --build-url=$build_url --env-include=$env_include --env-exclude=$env_exclude
+    echo "Upload artifact..."
+
+    jfrog rt upload "*" "$repository_id/$group_id_path/$artifact_id/$version/" --flat=false  --exclude-patterns="version;build;_remote.repositories;*.git*" --build-name="$build_name" --build-number="$build_number"
+  cd "${destination}"
+
+  echo "Publish build-info..."
+
+  jfrog rt build-publish "$build_name" "$build_number" --build-url="$build_url" --env-include="$env_include" --env-exclude="$env_exclude"
 
 fi
 
-metadata_files="$(echo ${metadata_files} | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
+metadata_files="$(echo "${metadata_files}" | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
 metadata_folder=$(folder_metadata "${payload}" "${destination}")
 echo $(echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}") >&3
 exit 0
