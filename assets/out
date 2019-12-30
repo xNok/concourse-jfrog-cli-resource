@@ -89,7 +89,7 @@ if [[ -z "${build_publish}" ]]; then
 
 else
 
-  echo "Collect Build Information see: https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-CollectingBuildInformation"
+  echo "Collecting Build Information see: https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-CollectingBuildInformation"
 
   # build-publish params
   build_name=$(jq -r '.build_name // empty' <<< ${build_publish})
@@ -121,7 +121,6 @@ else
   build_url="$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
 
   # Collecting git revision and remote url...
-  git_config=''
   if [[ -n "${add_git}" ]] && [[ -d "${destination}/${add_git}" ]]; then
 
     echo "Collecting git revision and remote url"
@@ -130,9 +129,10 @@ else
       
       echo "collecting the list of tracked project issues"
       
-      git_config="--config ${destination}/${add_git}/${add_git_issue_config_file}"
+      jfrog rt bag --config "${destination}/${add_git}/${add_git_issue_config_file}" "${build_name}" "${build_number}" "${destination}/${add_git}"
+    else
+      jfrog rt bag "${build_name}" "${build_number}" "${destination}/${add_git}"
     fi
-    jfrog rt bag "${git_config}" "${build_name}" "${build_number}" "${destination}/${add_git}"
   fi
 
   # Collecting environment variables...
