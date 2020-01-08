@@ -57,12 +57,14 @@ if [ -n "${package_artifact}" ]; then
 
     echo "Packaging Rules:"
     if [ -n "${package_artifact_bin}" ]; then
-      echo "$package_artifact_bin: {artifact_id}-{version}.packaging"
+      echo "   $package_artifact_bin: {artifact_id}-{version}.packaging"
     fi
 
     if [ -n "${package_artifact_bin}" ]; then
-      echo "$package_artifact_evidences: {artifact_id}-{version}-classifier.packaging"
+      echo "   $package_artifact_evidences: {artifact_id}-{version}-classifier.packaging"
     fi
+
+    echo ""
 fi
 
 for abs_file in $files; do
@@ -80,6 +82,7 @@ for abs_file in $files; do
       echo "Packaging file: ${file} as ${artifact_id}-${version}-${file}"
       mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}-${file}"
       file=${artifact_id}-${version}-${file}
+
     else
       echo "Removing: ${file}"
       rm "${destination}/${path_param}/${file}"
@@ -117,18 +120,16 @@ else
 
   # Add 'buildInfo.env.' prefix, otherwise any pattern that does not begins with '*' will not match.
   if [[ -n ${env_include} ]] ; then
-    env_include=$(sed 's/^/buildInfo.env./' <<< ${env_include})
-    env_include=$(sed 's/;/;buildInfo.env./g' <<< ${env_include})
+    env_include="buildInfo.env.${env_include//;/;buildInfo.env.}"
   fi
   if [[ -n ${env_exclude} ]] ; then
-    env_exclude=$(sed 's/^/buildInfo.env./' <<< ${env_exclude})
-    env_exclude=$(sed 's/;/;buildInfo.env./g' <<< ${env_exclude})
+    env_exclude="buildInfo.env.${env_exclude//;/;buildInfo.env.}"
   fi
   
   # If exist, read build_number from file
   build_number_file=${build_number_file:=${path_param}/build}
   if [[ -f "${destination}/${build_number_file}" ]]; then
-    build_number=$(cat ${destination}/${build_number_file} | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    build_number=$(sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "${destination}/${build_number_file}")
   fi  
   build_number="${build_number:-$BUILD_ID}"
 
@@ -137,11 +138,7 @@ else
   # Collecting git revision and remote url...
   if [[ -n "${add_git}" ]] && [[ -d "${destination}/${add_git}" ]]; then
 
-    echo "Collecting git revision and remote url"
-
     if [[ -n "${add_git_issue_config_file}" ]] && [[ -e "${destination}/${add_git}/${add_git_issue_config_file}" ]]; then
-      
-      echo "collecting the list of tracked project issues"
       
       jfrog rt bag --config "${destination}/${add_git}/${add_git_issue_config_file}" "${build_name}" "${build_number}" "${destination}/${add_git}"
     else
@@ -153,16 +150,19 @@ else
   jfrog rt build-collect-env "$build_name" "$build_number"
 
   # Upload artifact...
-  cd "${destination}/${path_param}"
+  pushd "${destination}/${path_param}"
 
     echo "Upload artifact..."
 
     jfrog rt upload "*" "$repository_id/$group_id_path/$artifact_id/$version/" --flat=false  --exclude-patterns="version;build;_remote.repositories;*.git*" --build-name="$build_name" --build-number="$build_number"
-  cd "${destination}"
+  popd
+  
+  pushd "${destination}"
 
-  echo "Publish build-info..."
+    echo "Publish build-info..."
 
-  jfrog rt build-publish "$build_name" "$build_number" --build-url="$build_url" --env-include="$env_include" --env-exclude="$env_exclude"
+    jfrog rt build-publish "$build_name" "$build_number" --build-url="$build_url" --env-include="$env_include" --env-exclude="$env_exclude"
+  popd
 
 fi
 
