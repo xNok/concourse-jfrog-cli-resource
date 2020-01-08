@@ -43,11 +43,16 @@ group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 jfrog rt config --url=$host --apikey=$api_key --interactive=false
 
 # Default dowload function
-jfrog rt dl "${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}.*" $destination/ --flat
+if [ ${version} =~ "SNAPSHOT" ]; then
+  artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-*.*"
+else
+  artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}.*"
+fi
 
+jfrog rt dl "$artefact_search_path" "$destination/" --flat
 # Download evidences
 for qualifier in $qualifiers_param; do
-  jfrog rt dl "${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-${qualifier}.*" $destination/ --flat
+  jfrog rt dl "${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-${qualifier}.*" "$destination/" --flat
 done
 
 
