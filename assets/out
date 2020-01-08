@@ -51,6 +51,8 @@ group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 files=$(find "${destination}/${path_param}" -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 metadata_files='[]'
 
+### is_file_complies_with_artifact_specs and/or package_artifact
+
 if [ -n "${package_artifact}" ]; then
     package_artifact_bin=$(jq -r '.bin // empty' <<< ${package_artifact})
     package_artifact_evidences=$(jq -r '.evidences // empty' <<< ${package_artifact})
@@ -71,14 +73,14 @@ for abs_file in $files; do
   file=$(basename "${abs_file}")
   if [ -n "${package_artifact}" ]; then
 
-    if [ -n "${package_artifact_bin}" ] && [[ ${file} =~ $package_artifact_bin  ]]; then
+    if [ -n "${package_artifact_bin}" ] && [[ ${file} =~ "$package_artifact_bin"  ]]; then
       filename=$(basename -- "$file")
       packaging="${filename##*.}"
       echo "Packaging file: ${file} as ${artifact_id}-${version}.$packaging"
       mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}.$packaging"
       file=${artifact_id}-${version}
 
-    elif [ -n "${package_artifact_evidences}" ] && [[ ${file} =~ $package_artifact_evidences ]]; then
+    elif [ -n "${package_artifact_evidences}" ] && [[ ${file} =~ "$package_artifact_evidences" ]]; then
       echo "Packaging file: ${file} as ${artifact_id}-${version}-${file}"
       mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}-${file}"
       file=${artifact_id}-${version}-${file}
@@ -95,14 +97,16 @@ done
 
 jfrog rt c artifactory-server --url="$host" --apikey="$api_key" --interactive=false
 
+## Upload artifact without/without build-info
+
 if [[ -z "${build_publish}" ]]; then
 
   echo "Upload artifact without build-info"
 
   # Upload artifact without build-info
-  cd "${destination}/${path_param}"
-    jfrog rt upload "*" "$repository_id/$group_id_path/$artifact_id/$version/" --flat=false  --exclude-patterns="version;build;_remote.repositories"
-  cd "${destination}"
+  pushd "${destination}/${path_param}"
+    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories"
+  popd
 
 else
 
@@ -151,18 +155,13 @@ else
 
   # Upload artifact...
   pushd "${destination}/${path_param}"
-
     echo "Upload artifact..."
-
     jfrog rt upload "*" "$repository_id/$group_id_path/$artifact_id/$version/" --flat=false  --exclude-patterns="version;build;_remote.repositories;*.git*" --build-name="$build_name" --build-number="$build_number"
   popd
-  
-  pushd "${destination}"
 
-    echo "Publish build-info..."
+  echo "Publish build-info..."
+  jfrog rt build-publish "$build_name" "$build_number" --build-url="$build_url" --env-include="$env_include" --env-exclude="$env_exclude"
 
-    jfrog rt build-publish "$build_name" "$build_number" --build-url="$build_url" --env-include="$env_include" --env-exclude="$env_exclude"
-  popd
 
 fi
 
