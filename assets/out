@@ -51,11 +51,23 @@ group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 files=$(find "${destination}/${path_param}" -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 metadata_files='[]'
 
+if [ -n "${package_artifact}" ]; then
+    package_artifact_bin=$(jq -r '.bin // empty' <<< ${package_artifact})
+    package_artifact_evidences=$(jq -r '.evidences // empty' <<< ${package_artifact})
+
+    echo "Packaging Rules:"
+    if [ -n "${package_artifact_bin}" ]; then
+      echo "$package_artifact_bin: {artifact_id}-{version}.packaging"
+    fi
+
+    if [ -n "${package_artifact_bin}" ]; then
+      echo "$package_artifact_evidences: {artifact_id}-{version}-classifier.packaging"
+    fi
+fi
+
 for abs_file in $files; do
   file=$(basename "${abs_file}")
   if [ -n "${package_artifact}" ]; then
-    package_artifact_bin=$(jq -r '.bin // empty' <<< ${package_artifact})
-    package_artifact_evidences=$(jq -r '.evidences // empty' <<< ${package_artifact})
 
     if [ -n "${package_artifact_bin}" ] && [[ ${file} =~ $package_artifact_bin  ]]; then
       filename=$(basename -- "$file")
