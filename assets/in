@@ -43,7 +43,7 @@ group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 jfrog rt config --url=$host --apikey=$api_key --interactive=false
 
 # Default dowload function
-if [ ${version} =~ "SNAPSHOT" ]; then
+if [[ ${version} =~ "SNAPSHOT" ]] ; then
   artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-*.*"
 else
   artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}.*"
@@ -56,9 +56,9 @@ for qualifier in $qualifiers_param; do
 done
 
 
-if [ ! -z "$(ls -A $destination)" ]; then
+if [ -n "$(ls -A $destination)" ]; then
 
-  echo "${version}" > $destination/version
+  echo "${version}" > "$destination/version"
 
   # TODO add to metadat the list of item
   metadata_folder=$(folder_metadata "${payload}" "${destination}" "${version}")
