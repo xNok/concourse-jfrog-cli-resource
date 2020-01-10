@@ -40,17 +40,27 @@ host=$(strip_last_slash "${host}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 
 # Configure jfrog cli
-jfrog rt config --url="$host "--apikey="$api_key" --interactive=false
+jfrog rt config --url="$host" --apikey="$api_key" --interactive=false
 
 # Default dowload function
 if [[ ${version} =~ "SNAPSHOT" ]] ; then
   version_snapshot=${version//-SNAPSHOT/}
   artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version_snapshot}-*.*"
+
 else
   artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}.*"
 fi
 
-jfrog rt dl "$artefact_search_path" "$destination/" --flat
+jfrog rt dl "$artefact_search_path" "$destination/" --flat 
+
+if [[ ${version} =~ "SNAPSHOT" ]] ; then
+  find "$destination/" -type f | while read FILE ; do
+      FILE_RENAMED=$(echo $FILE | sed -re 's/([0-9]{8})\.([0-9]{6})-([0-9]{1,10})/SNAPSHOT/g')
+      echo -e "\n\e[31mRename $FILE to $FILE_RENAMED\e[0m\n"
+      mv "${FILE}" "${FILE_RENAMED}";
+      FILE=$FILE_RENAMED
+  done
+fi
 
 # Download evidences
 for qualifier in $qualifiers_param; do
