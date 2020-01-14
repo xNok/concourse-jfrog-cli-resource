@@ -17,3 +17,6 @@ test-out-b:
 
 test-out-p:
 	bash ./test/out-test.sh ./test/request/out-package_artifact.json ${user}
+
+test-out-c:
+	bash ./test/out-test.sh ./test/request/out-package_artifact.json ${user}

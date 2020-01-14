@@ -5,6 +5,7 @@ build
 .classpath
 .project
 .vscode
+.env
 
 # Ignore Gradle GUI config
 gradle-app.setting
