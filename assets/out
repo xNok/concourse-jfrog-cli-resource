@@ -34,6 +34,7 @@ artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
 # params
 path_param=$(jq -r '.params.path // ""' < ${payload})
 build_publish=$(jq -r '.params.build_publish // empty' < ${payload})
+build_set_props=$(jq -r '.params.build_set_props // empty' < ${payload})
 package_artifact=$(jq -r '.params.package_artifact // empty' < ${payload})
 
 is_valid 'host' "${host}"
@@ -70,7 +71,6 @@ done
 jfrog rt c artifactory-server --url="$host" --apikey="$api_key" --interactive=false
 
 ## Upload artifact without/without build-info
-
 if [[ -z "${build_publish}" ]]; then
 
   echo "Upload artifact without build-info"
@@ -135,6 +135,10 @@ else
   jfrog rt build-publish "$build_name" "$build_number" --build-url="$build_url" --env-include="$env_include" --env-exclude="$env_exclude"
 
 
+fi
+
+if [[ -z "${build_set_props}" ]]; then
+  jfrog rt sp "*" "${build_set_props}" --build="${destination}/${build_number_file}"
 fi
 
 metadata_files="$(echo "${metadata_files}" | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
