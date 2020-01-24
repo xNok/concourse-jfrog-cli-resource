@@ -94,5 +94,6 @@ The artefact est expected to follow this formating: `${artifact_id}-${version}[-
   * `build_name` : *(required)* The build name.
   * `build_number` : *(optional)*  The path to a build file. defaults to `<path parameter>/build` if it exist, otherwise defaults to concourse-ci `BUILD_ID` variable.
   * `add_git`: *(optional)* The git resource name. Collect VCS details from git and add them to a build.
+  * `add_git_issue_config_file`: *(optional)* TPath to a configuration file, used for collecting tracked project issues and adding them to the build-info.. (see [Artifactory Collecting Build Information](https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-CollectingBuildInformation])
   * `env_include` : *(optional)* List of patterns in the form of `"value1;value2;..."` Only environment variables match those patterns will be included. Default: `*`
   * `env_exclude` : *(optional)* List of case insensitive patterns in the form of `"value1;value2;..."`. Environment variables match those patterns will be excluded. Default: `*password*;*secret*;*key*;*token*`
