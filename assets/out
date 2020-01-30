@@ -62,7 +62,7 @@ if [ -n "${package_artifact}" ]; then
       echo "   $package_artifact_bin: {artifact_id}-{version}.packaging"
     fi
 
-    if [ -n "${package_artifact_bin}" ]; then
+    if [ -n "${package_artifact_evidences}" ]; then
       echo "   $package_artifact_evidences: {artifact_id}-{version}-classifier.packaging"
     fi
 
@@ -73,14 +73,14 @@ for abs_file in $files; do
   file=$(basename "${abs_file}")
   if [ -n "${package_artifact}" ]; then
 
-    if [ -n "${package_artifact_bin}" ] && [[ ${file} =~ "$package_artifact_bin"  ]]; then
+    if [ -n "${package_artifact_bin}" ] && [[ ${file} =~ $package_artifact_bin  ]]; then
       filename=$(basename -- "$file")
       packaging="${filename##*.}"
       echo "Packaging file: ${file} as ${artifact_id}-${version}.$packaging"
       mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}.$packaging"
       file=${artifact_id}-${version}
 
-    elif [ -n "${package_artifact_evidences}" ] && [[ ${file} =~ "$package_artifact_evidences" ]]; then
+    elif [ -n "${package_artifact_evidences}" ] && [[ ${file} =~ $package_artifact_evidences ]]; then
       echo "Packaging file: ${file} as ${artifact_id}-${version}-${file}"
       mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}-${file}"
       file=${artifact_id}-${version}-${file}
