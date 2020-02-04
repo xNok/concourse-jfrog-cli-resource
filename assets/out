@@ -50,8 +50,9 @@ folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
-files=$(find "${destination}/${path_param}" -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 metadata_files='[]'
+
+files=$(find "${destination}/${path_param}" -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 
 ### is_file_complies_with_artifact_specs and/or package_artifact
 

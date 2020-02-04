@@ -20,6 +20,7 @@ function echo_packaging_rules() {
 }
 
 function package_artefact() {
+
   file=${1}
   artifact_id=${2}
   version=${3}
