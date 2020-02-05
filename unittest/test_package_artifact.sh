@@ -35,7 +35,12 @@ function setup()
 {
     rm -rf "$tmp_dir" && mkdir "$tmp_dir"
     touch evidence.yml
+    touch evidence-asdads.yml
+    touch configuration.yml
     touch application.zip
+    mkdir subfolder
+    touch subfolder/sub-evidence.yml
+    touch subfolder/sub-bar.yml
 
     files=$(find "$tmp_dir" -type f -not -path "$tmp_dir/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 
@@ -63,15 +68,16 @@ if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
 
 ### WHEN
 for abs_file in $files; do
-    file=$(basename "${abs_file}")
-    package_artefact "$file" "$artifact_id" "$version" "$tmp_dir"
+    package_artefact "$abs_file" "$artifact_id" "$version" "$tmp_dir"
 done
 ### THEN
-validation="test-test.zip
-test-test-evidence.yml
-to_validate.txt"
+validation="./test-test-evidence-asdads.yml
+./test-test-evidence.yml
+./test-test-sub-evidence.yml
+./test-test.zip
+./to_validate.txt"
 
-ls -1 > to_validate.txt
+find . -type f > to_validate.txt
 
 if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
 
@@ -92,14 +98,13 @@ if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
 
 ### WHEN
 for abs_file in $files; do
-    file=$(basename "${abs_file}")
-    package_artefact "$file" "$artifact_id" "$version" "$tmp_dir"
+    package_artefact "$abs_file" "$artifact_id" "$version" "$tmp_dir"
 done
 ### THEN
-validation="test-test.zip
-to_validate.txt"
+validation="./test-test.zip
+./to_validate.txt"
 
-ls > to_validate.txt
+find . -type f > to_validate.txt
 
 if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
 
@@ -119,12 +124,11 @@ if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
 
 ### WHEN
 for abs_file in $files; do
-    file=$(basename "${abs_file}")
-    package_artefact "$file" "$artifact_id" "$version" "$tmp_dir"
+    package_artefact "$abs_file" "$artifact_id" "$version" "$tmp_dir"
 done
 ### THEN
-validation="to_validate.txt"
+validation="./to_validate.txt"
 
-ls -1 > to_validate.txt
+find . -type f > to_validate.txt
 
 if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi

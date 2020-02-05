@@ -60,6 +60,7 @@ if [ -n "${package_artifact}" ]; then
   echo_packaging_rules "$package_artifact"
 fi
 
+### Package, Validate add to metadata
 for abs_file in $files; do
   file=$(basename "${abs_file}")
   if [ -n "${package_artifact}" ]; then

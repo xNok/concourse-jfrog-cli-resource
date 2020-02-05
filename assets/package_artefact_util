@@ -21,25 +21,27 @@ function echo_packaging_rules() {
 
 function package_artefact() {
 
-  file=${1}
+  filepath=${1}
   artifact_id=${2}
   version=${3}
   pkg_destination=${4}
 
-  if [ -n "${package_artifact_bin}" ] && [[ ${file} =~ $package_artifact_bin  ]]; then
-    filename=$(basename -- "$file")
-    packaging="${filename##*.}"
-    echo "Packaging file: ${file} as ${artifact_id}-${version}.$packaging"
-    mv "${pkg_destination}/${file}" "${pkg_destination}/${artifact_id}-${version}.$packaging"
+
+  filename=$(basename -- "$filepath")
+  packaging="${filename##*.}"
+
+  if [ -n "${package_artifact_bin}" ] && [[ ${filepath} =~ $package_artifact_bin  ]]; then
+    echo "Packaging file: ${filename} as ${artifact_id}-${version}.$packaging"
+    mv "${filepath}" "${pkg_destination}/${artifact_id}-${version}.$packaging"
     file=${artifact_id}-${version}
 
-  elif [ -n "${package_artifact_evidences}" ] && [[ ${file} =~ $package_artifact_evidences ]]; then
-    echo "Packaging file: ${file} as ${artifact_id}-${version}-${file}"
-    mv "${pkg_destination}/${file}" "${pkg_destination}/${artifact_id}-${version}-${file}"
-    file=${artifact_id}-${version}-${file}
+  elif [ -n "${package_artifact_evidences}" ] && [[ ${filename} =~ $package_artifact_evidences ]]; then
+    echo "Packaging file: ${filename} as ${artifact_id}-${version}-${filename}"
+    mv "${filepath}" "${pkg_destination}/${artifact_id}-${version}-${filename}"
+    file=${artifact_id}-${version}-${filename}
 
   else
-    echo "Removing: ${file}"
-    rm "${pkg_destination}/${file}"
+    echo "Removing: ${filepath}"
+    rm "${filepath}"
   fi
 }
