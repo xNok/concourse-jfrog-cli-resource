@@ -38,6 +38,7 @@ function setup()
     touch evidence-asdads.yml
     touch configuration.yml
     touch application.zip
+    touch report.html
     mkdir subfolder
     touch subfolder/sub-evidence.yml
     touch subfolder/sub-bar.yml
@@ -52,7 +53,40 @@ version="test"
 echo "$files"
 
 ## TEST CASE 1
-echo "--- TEST CASE 1: binary and evidences"
+echo "--- TEST CASE 1: globing on binary and evidences"
+setup
+
+### GIVEN
+package_artifact_testset1='{"bin": "application|configuration", "evidences": "evidence|report|result"}'
+### WHEN
+echo_packaging_rules "$package_artifact_testset1" > to_validate.txt
+### THEN
+validation="Packaging Rules:
+   application|configuration: {artifact_id}-{version}.packaging
+   evidence|report|result: {artifact_id}-{version}-{classifier}.packaging"
+
+if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
+
+### WHEN
+for abs_file in $files; do
+    package_artefact "$abs_file" "$artifact_id" "$version" "$tmp_dir"
+done
+### THEN
+validation="./test-test-evidence-asdads.yml
+./test-test-evidence.yml
+./test-test-report.html
+./test-test-sub-evidence.yml
+./test-test.yml
+./test-test.zip
+./to_validate.txt"
+
+find . -type f > to_validate.txt
+
+if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
+
+
+## TEST CASE 2
+echo "--- TEST CASE 2: binary and evidences"
 setup
 
 ### GIVEN
@@ -81,8 +115,8 @@ find . -type f > to_validate.txt
 
 if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
 
-## TEST CASE 2
-echo "--- TEST CASE 2: only binary"
+## TEST CASE 3
+echo "--- TEST CASE 3: only binary"
 setup
 
 ### GIVEN
@@ -108,9 +142,9 @@ find . -type f > to_validate.txt
 
 if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
 
-## TEST CASE 3
+## TEST CASE 4
 
-echo "--- TEST CASE 3: noting"
+echo "--- TEST CASE 4: noting"
 setup
 
 ### GIVEN
