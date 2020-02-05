@@ -1,0 +1,47 @@
+#!/bin/bash
+
+function echo_packaging_rules() {
+
+  package_artifact=${1}
+
+  package_artifact_bin=$(jq -r '.bin // empty' <<< ${package_artifact})
+  package_artifact_evidences=$(jq -r '.evidences // empty' <<< ${package_artifact})
+
+  echo "Packaging Rules:"
+  if [ -n "${package_artifact_bin}" ]; then
+    echo "   $package_artifact_bin: {artifact_id}-{version}.packaging"
+  fi
+
+  if [ -n "${package_artifact_evidences}" ]; then
+    echo "   $package_artifact_evidences: {artifact_id}-{version}-{classifier}.packaging"
+  fi
+
+  echo ""
+}
+
+function package_artefact() {
+
+  filepath=${1}
+  artifact_id=${2}
+  version=${3}
+  pkg_destination=${4}
+
+
+  filename=$(basename -- "$filepath")
+  packaging="${filename##*.}"
+
+  if [ -n "${package_artifact_bin}" ] && [[ ${filepath} =~ $package_artifact_bin  ]]; then
+    echo "Packaging file: ${filename} as ${artifact_id}-${version}.$packaging"
+    mv "${filepath}" "${pkg_destination}/${artifact_id}-${version}.$packaging"
+    file=${artifact_id}-${version}
+
+  elif [ -n "${package_artifact_evidences}" ] && [[ ${filename} =~ $package_artifact_evidences ]]; then
+    echo "Packaging file: ${filename} as ${artifact_id}-${version}-${filename}"
+    mv "${filepath}" "${pkg_destination}/${artifact_id}-${version}-${filename}"
+    file=${artifact_id}-${version}-${filename}
+
+  else
+    echo "Removing: ${filepath}"
+    rm "${filepath}"
+  fi
+}

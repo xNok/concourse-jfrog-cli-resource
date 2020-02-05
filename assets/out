@@ -9,6 +9,7 @@ PATH=/usr/local/bin:$PATH
 TMPDIR=${TMPDIR:-/tmp}
 
 source $(dirname $0)/common
+source $(dirname $0)/package_artefact_util
 
 destination=${1}
 
@@ -33,6 +34,7 @@ artifact_id=$(jq -r '.source.artifact_id // ""' < ${payload})
 # params
 path_param=$(jq -r '.params.path // ""' < ${payload})
 build_publish=$(jq -r '.params.build_publish // empty' < ${payload})
+build_set_props=$(jq -r '.params.build_set_props // empty' < ${payload})
 package_artifact=$(jq -r '.params.package_artifact // empty' < ${payload})
 
 is_valid 'host' "${host}"
@@ -48,48 +50,21 @@ folder_exists "${destination}/${path_param}"
 
 version=$(get_version "${payload}" "${destination}")
 group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
-files=$(find "${destination}/${path_param}" -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 metadata_files='[]'
+
+files=$(find "${destination}/${path_param}" -type f -not -path "${destination}/${path_param}/.git/*" -not -name "version" -not -name "build" -not -name "_remote.repositories" -not -name "config.yaml")
 
 ### is_file_complies_with_artifact_specs and/or package_artifact
 
 if [ -n "${package_artifact}" ]; then
-    package_artifact_bin=$(jq -r '.bin // empty' <<< ${package_artifact})
-    package_artifact_evidences=$(jq -r '.evidences // empty' <<< ${package_artifact})
-
-    echo "Packaging Rules:"
-    if [ -n "${package_artifact_bin}" ]; then
-      echo "   $package_artifact_bin: {artifact_id}-{version}.packaging"
-    fi
-
-    if [ -n "${package_artifact_evidences}" ]; then
-      echo "   $package_artifact_evidences: {artifact_id}-{version}-classifier.packaging"
-    fi
-
-    echo ""
+  echo_packaging_rules "$package_artifact"
 fi
 
+### Package, Validate add to metadata
 for abs_file in $files; do
   file=$(basename "${abs_file}")
   if [ -n "${package_artifact}" ]; then
-
-    if [ -n "${package_artifact_bin}" ] && [[ ${file} =~ $package_artifact_bin  ]]; then
-      filename=$(basename -- "$file")
-      packaging="${filename##*.}"
-      echo "Packaging file: ${file} as ${artifact_id}-${version}.$packaging"
-      mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}.$packaging"
-      file=${artifact_id}-${version}
-
-    elif [ -n "${package_artifact_evidences}" ] && [[ ${file} =~ $package_artifact_evidences ]]; then
-      echo "Packaging file: ${file} as ${artifact_id}-${version}-${file}"
-      mv "${destination}/${path_param}/${file}" "${destination}/${path_param}/${artifact_id}-${version}-${file}"
-      file=${artifact_id}-${version}-${file}
-
-    else
-      echo "Removing: ${file}"
-      rm "${destination}/${path_param}/${file}"
-      continue
-    fi
+    package_artefact "$file" "$artifact_id" "$version" "${destination}/${path_param}"
   fi
   is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
@@ -98,14 +73,13 @@ done
 jfrog rt c artifactory-server --url="$host" --apikey="$api_key" --interactive=false
 
 ## Upload artifact without/without build-info
-
 if [[ -z "${build_publish}" ]]; then
 
   echo "Upload artifact without build-info"
 
   # Upload artifact without build-info
   pushd "${destination}/${path_param}"
-    jfrog rt upload "*" $repository_id/$group_id_path/$artifact_id/$version/ --flat=false  --exclude-patterns="version;build;_remote.repositories"
+    jfrog rt upload "*" "$repository_id/$group_id_path/$artifact_id/$version/" --flat=false  --exclude-patterns="version;build;_remote.repositories"
   popd
 
 else
@@ -165,7 +139,11 @@ else
 
 fi
 
+if [[ -z "${build_set_props}" ]]; then
+  jfrog rt sp "*" "${build_set_props}" --build="${destination}/${build_number_file}"
+fi
+
 metadata_files="$(echo "${metadata_files}" | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
 metadata_folder=$(folder_metadata "${payload}" "${destination}")
-echo $(echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}") >&3
+echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}" >&3
 exit 0

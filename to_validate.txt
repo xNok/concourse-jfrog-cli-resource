@@ -1,0 +1,4 @@
+Packaging Rules:
+   application: {artifact_id}-{version}.packaging
+   evidence: {artifact_id}-{version}-{classifier}.packaging
+
