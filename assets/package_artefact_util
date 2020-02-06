@@ -26,22 +26,23 @@ function package_artefact() {
   version=${3}
   pkg_destination=${4}
 
+  echo "$filepath"
 
   filename=$(basename -- "$filepath")
   packaging="${filename##*.}"
 
   if [ -n "${package_artifact_bin}" ] && [[ ${filepath} =~ $package_artifact_bin  ]]; then
-    echo "Packaging file: ${filename} as ${artifact_id}-${version}.$packaging"
+    echo "-- Packaging file: ${filename} as ${artifact_id}-${version}.$packaging"
     mv "${filepath}" "${pkg_destination}/${artifact_id}-${version}.$packaging"
     file=${artifact_id}-${version}
 
   elif [ -n "${package_artifact_evidences}" ] && [[ ${filename} =~ $package_artifact_evidences ]]; then
-    echo "Packaging file: ${filename} as ${artifact_id}-${version}-${filename}"
+    echo "-- Packaging file: ${filename} as ${artifact_id}-${version}-${filename}"
     mv "${filepath}" "${pkg_destination}/${artifact_id}-${version}-${filename}"
     file=${artifact_id}-${version}-${filename}
 
   else
-    echo "Removing: ${filepath}"
+    echo "-- Removing: ${filepath}"
     rm "${filepath}"
   fi
 }

@@ -64,7 +64,7 @@ fi
 for abs_file in $files; do
   file=$(basename "${abs_file}")
   if [ -n "${package_artifact}" ]; then
-    package_artefact "$file" "$artifact_id" "$version" "${destination}/${path_param}"
+    package_artefact "$abs_file" "$artifact_id" "$version" "${destination}/${path_param}"
   fi
   is_file_complies_with_artifact_specs "${artifact_id}" "${version}" "${file}"
   metadata_files=$(echo "${metadata_files}" | jq ". + [\"${file}\"]")
