@@ -1,0 +1,41 @@
+#!/bin/bash
+
+function rename_snapshots_artefact() {
+
+  folder=$1
+
+  echo -e "\n\e[93mPrepare files from snapshot repository\e[0m\n"
+
+  declare -A filemap
+
+  regex="([0-9]{8}\.[0-9]{6}-[0-9]{1,10})"
+
+  find "$folder/" -type f | while read FILE ; do
+      # Catupre timestamp
+      [[ $FILE =~ $regex ]]
+
+      FILE_TIMESTAMP=${BASH_REMATCH[1]}
+      FILE_RENAMED="${FILE//${FILE_TIMESTAMP}/SNAPSHOT}"
+
+      if [ ${filemap[$FILE_RENAMED]+_} ];  then
+        # echo "Found";
+        # which word is first alphabetically?
+        if [[ ${filemap[$FILE_RENAMED]} < $FILE_TIMESTAMP ]]; then
+            filemap[$FILE_RENAMED]="$FILE_TIMESTAMP"
+        fi
+      else 
+        # echo "Not found";
+        filemap[$FILE_RENAMED]="$FILE_TIMESTAMP"
+      fi
+
+      if [ "${filemap[$FILE_RENAMED]}" = "$FILE_TIMESTAMP" ]; then
+        echo -e "\e[31mRename $FILE to $FILE_RENAMED\e[0m"
+        mv "${FILE}" "${FILE_RENAMED}";
+        FILE=$FILE_RENAMED
+      else
+        echo -e "DELETE $FILE a newer version exist\e[0m"
+        rm "$FILE"
+      fi
+  done
+
+}
