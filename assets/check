@@ -40,6 +40,7 @@ version=$(jq -r '.version.ref // ""' < ${payload})
 
 # In CI/CD context you may want to skip the check step
 skip_check=$(jq -r '.source.skip_check // "false"' < ${payload})
+sort_version_stategy=$(jq -r '.source.sort_version_stategy // "maven"' < ${payload})
 
 if [[ -z "${version}" ]] || [ "$skip_check" = "false" ] ; then
 
@@ -58,7 +59,11 @@ if [[ -z "${version}" ]] || [ "$skip_check" = "false" ] ; then
 fi
 
 if [[ ${http_code} -eq '200'  ]] ; then
-  sorted_versions="$(sort-versions --json "$(echo "${req_output}" | jq '[.results[].name]')")"
+  if [ "$sort_version_stategy" = "maven" ]; then
+    sorted_versions="$(sort-versions --json "$(echo "${req_output}" | jq '[.results[].name]')")"
+  else
+    sorted_versions="$(echo "${req_output}" | jq '[.results[].name]')"
+  fi
   total=$(echo "${req_output}" | jq '.range.total')
   if [[ "${total}" == "0" ]]; then
     echo "[]" >&3
