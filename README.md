@@ -13,6 +13,7 @@ This integration allows:
 * `repository_id`: *Required.* The repository 
 * `group_id`: *Required.* The maven groupId of your artifact
 * `artifact_id`: *Required.* The maven artifactId of your artifact
+* `skip_check`: *Optinal.* In CI/CD context you may no need to check because version are added by put. (it keeps the history clean)
 ### Example
 Resource Type Configuration:
 ``` yaml

@@ -38,19 +38,26 @@ aql="items.find(
 
 version=$(jq -r '.version.ref // ""' < ${payload})
 
-result=$(curl \
-  -k \
-  -X POST \
-  -H "X-JFrog-Art-Api:${api_key}" \
-  -H "Content-Type:text/plain" \
-  -d "${aql}" \
-  --write-out "\n%{http_code}" \
-  --silent \
-  ${host}/api/search/aql)
+# In CI/CD context you may want to skip the check step
+skip_check=$(jq -r '.source.skip_check // "false"' < ${payload})
 
-http_code="${result##*$'\n'}"
-req_output=$(echo "${result}" | sed '$d')
-if [[ ${http_code} -eq '200' ]]; then
+if [ "$skip_check" = "false" ] ; then
+
+  result=$(curl \
+    -k \
+    -X POST \
+    -H "X-JFrog-Art-Api:${api_key}" \
+    -H "Content-Type:text/plain" \
+    -d "${aql}" \
+    --write-out "\n%{http_code}" \
+    --silent \
+    ${host}/api/search/aql)
+
+  http_code="${result##*$'\n'}"
+  req_output=$(echo "${result}" | sed '$d')
+fi
+
+if [[ ${http_code} -eq '200'  ]] ; then
   sorted_versions="$(sort-versions --json "$(echo "${req_output}" | jq '[.results[].name]')")"
   total=$(echo "${req_output}" | jq '.range.total')
   if [[ "${total}" == "0" ]]; then
@@ -62,6 +69,10 @@ if [[ ${http_code} -eq '200' ]]; then
     echo "${sorted_versions}" | jq ".[.|to_entries|.[]|select(.value == \"${version}\").key:]|map({ref:.})" >&3
   fi
   exit 0
+elif [ "$skip_check" = "false" ] ; then
+  # The list may be empty, if there are no versions available at the source.
+  # If the given version is already the latest, an array with that version as the sole entry should be listed.
+  echo "[{ref: \"$version\"}]" >&3
 else
   echo "Unable to retreive versions in artifactory" >&2
   echo "Request: curl -k -X POST -H "X-JFrog-Art-Api:${api_key}" -H "Content-Type:text/plain" -d "${aql}" --write-out "\n%{http_code}" --silent ${host}/api/search/aql" >&2
