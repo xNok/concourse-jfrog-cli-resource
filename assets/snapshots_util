@@ -17,6 +17,7 @@ function rename_snapshots_artefact() {
       FILE_TIMESTAMP=${BASH_REMATCH[1]}
       FILE_RENAMED="${FILE//${FILE_TIMESTAMP}/SNAPSHOT}"
 
+      # Do we need that file
       if [ ${filemap[$FILE_RENAMED]+_} ];  then
         # echo "Found";
         # which word is first alphabetically?
@@ -28,12 +29,29 @@ function rename_snapshots_artefact() {
         filemap[$FILE_RENAMED]="$FILE_TIMESTAMP"
       fi
 
+      #demo-application-java-3e7f378-SNAPSHOT-testsResults.tar.gz SNAPSHOT-testsResults.tar.gz
+      #demo-application-java-3e7f378-SNAPSHOT.jar > SNAPSHOT.jar
+
+      regex_bin="SNAPSHOT\..*"
+      regex_qualifier="SNAPSHOT-([a-zA-Z0-9]*)\."
+
+      if [[ "$FILE_RENAMED" =~ $regex_qualifier ]]; then
+        echo "qualifier found: ${BASH_REMATCH[1]}"
+        FILE_QUALIFIER=${BASH_REMATCH[1]}
+
+        if [[ ! " ${qualifiers_param[@]} " =~ " ${FILE_QUALIFIER} " ]]; then
+          echo -e "\e[31mDELETE $FILE, no eligible (edit the resource params qualifiers to include this file)\e[0m"
+          rm "$FILE"
+          continue
+        fi
+      fi
+
       if [ "${filemap[$FILE_RENAMED]}" = "$FILE_TIMESTAMP" ]; then
-        echo -e "\e[31mRename $FILE to $FILE_RENAMED\e[0m"
-        mv "${FILE}" "${FILE_RENAMED}";
-        FILE=$FILE_RENAMED
+          echo -e "\e[33mRename $FILE to $FILE_RENAMED\e[0m"
+          mv "${FILE}" "${FILE_RENAMED}";
+          FILE=$FILE_RENAMED
       else
-        echo -e "DELETE $FILE a newer version exist\e[0m"
+        echo -e "\e[31mDELETE $FILE a newer version exist\e[0m"
         rm "$FILE"
       fi
   done

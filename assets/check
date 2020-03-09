@@ -41,7 +41,7 @@ version=$(jq -r '.version.ref // ""' < ${payload})
 # In CI/CD context you may want to skip the check step
 skip_check=$(jq -r '.source.skip_check // "false"' < ${payload})
 
-if [ "$skip_check" = "false" ] ; then
+if [[ -z "${version}" ]] || [ "$skip_check" = "false" ] ; then
 
   result=$(curl \
     -k \

@@ -51,11 +51,30 @@ function setup()
 
 setup
 
+qualifiers_param=( "testresult" "testsResults" )
+
 rename_snapshots_artefact "$tmp_dir"
 
 validation="demo-application-java-3e7f378-20200213.153741-3-testresult.tar
 demo-application-java-3e7f378-20200213.153741-3-testsResults.tar.gz
 demo-application-java-3e7f378-20200213.153741-3.jar
+demo-application-java-3e7f378-20200213.153741-3.pom"
+
+cat $(find "$tmp_dir" -type f) >  to_validate.txt
+
+if [ "$validation" != "$(cat "$tmp_dir/to_validate.txt")" ]; then exit 1; fi
+
+
+# TEST SUITE rename_snapshots_artefact 2
+echo "--- TEST SUIT: rename_snapshots_artefact and filter ---"
+
+setup
+
+qualifiers_param=( )
+
+rename_snapshots_artefact "$tmp_dir"
+
+validation="demo-application-java-3e7f378-20200213.153741-3.jar
 demo-application-java-3e7f378-20200213.153741-3.pom"
 
 cat $(find "$tmp_dir" -type f) >  to_validate.txt

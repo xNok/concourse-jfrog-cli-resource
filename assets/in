@@ -56,12 +56,13 @@ jfrog rt dl "$artefact_search_path" "$destination/" --flat
 # SNAPSHOT need to be rename because the include timestamp 
 if [[ ${version} =~ "SNAPSHOT" ]] ; then
   rename_snapshots_artefact $destination
+else
+  # Download evidences
+  for qualifier in $qualifiers_param; do
+    jfrog rt dl "${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-${qualifier}.*" "$destination/" --flat
+  done
 fi
 
-# Download evidences
-for qualifier in $qualifiers_param; do
-  jfrog rt dl "${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-${qualifier}.*" "$destination/" --flat
-done
 
 
 if [ -n "$(ls -A $destination)" ]; then
