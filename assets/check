@@ -33,7 +33,8 @@ group_id_path=$(echo "${group_id}" | sed 's/\./\//g')
 aql="items.find(
     {\"repo\": \"${repository_id}\"},
     {\"type\": \"folder\"},
-    {\"path\": \"${group_id_path}/${artifact_id}\"}
+    {\"path\": \"${group_id_path}/${artifact_id}\"},
+    {\"$desc\" : [\"created\"]}
 ).include(\"repo\",\"path\",\"name\")"
 
 version=$(jq -r '.version.ref // ""' < ${payload})
