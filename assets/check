@@ -34,7 +34,7 @@ aql="items.find(
     {\"repo\": \"${repository_id}\"},
     {\"type\": \"folder\"},
     {\"path\": \"${group_id_path}/${artifact_id}\"}
-).include(\"repo\",\"path\",\"name\",\"created\").sort({\"\$desc\" : [\"created\"]})"
+).include(\"repo\",\"path\",\"name\",\"created\").sort({\"\$asc\" : [\"created\"]})"
 
 version=$(jq -r '.version.ref // ""' < ${payload})
 
