@@ -9,6 +9,7 @@ PATH=/usr/local/bin:$PATH
 TMPDIR=${TMPDIR:-/tmp}
 
 source $(dirname $0)/common
+source $(dirname $0)/snapshots_util
 
 destination=${1}
 
@@ -46,26 +47,22 @@ jfrog rt config --url="$host" --apikey="$api_key" --interactive=false
 if [[ ${version} =~ "SNAPSHOT" ]] ; then
   version_snapshot=${version//-SNAPSHOT/}
   artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version_snapshot}-*.*"
-
 else
   artefact_search_path="${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}.*"
 fi
 
 jfrog rt dl "$artefact_search_path" "$destination/" --flat 
 
+# SNAPSHOT need to be rename because the include timestamp 
 if [[ ${version} =~ "SNAPSHOT" ]] ; then
-  find "$destination/" -type f | while read FILE ; do
-      FILE_RENAMED=$(echo $FILE | sed -re 's/([0-9]{8})\.([0-9]{6})-([0-9]{1,10})/SNAPSHOT/g')
-      echo -e "\n\e[31mRename $FILE to $FILE_RENAMED\e[0m\n"
-      mv "${FILE}" "${FILE_RENAMED}";
-      FILE=$FILE_RENAMED
+  rename_snapshots_artefact $destination
+else
+  # Download evidences
+  for qualifier in $qualifiers_param; do
+    jfrog rt dl "${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-${qualifier}.*" "$destination/" --flat
   done
 fi
 
-# Download evidences
-for qualifier in $qualifiers_param; do
-  jfrog rt dl "${repository_id}/${group_id_path}/${artifact_id}/${version}/${artifact_id}-${version}-${qualifier}.*" "$destination/" --flat
-done
 
 
 if [ -n "$(ls -A $destination)" ]; then

@@ -13,6 +13,8 @@ This integration allows:
 * `repository_id`: *Required.* The repository 
 * `group_id`: *Required.* The maven groupId of your artifact
 * `artifact_id`: *Required.* The maven artifactId of your artifact
+* `skip_check`: *Optinal.* In CI/CD context you may no need to check because version are added by put. (it keeps the history clean)
+* `sort_version_stategy`: *Optinal.* define how artefact are sorted to create concourse resourec history (default: maven, availible: maven, created)
 ### Example
 Resource Type Configuration:
 ``` yaml
@@ -75,7 +77,13 @@ Publish build information: _(use all optional params)_
 ```
 ## Behavior
 ### `check`: Check for new artifacts.
-The resource searches for folders under `http(s)://<host>/<repository_id>/<group_id>/<artifact_id>`. It expects to get a list of valid maven versions (See https://cwiki.apache.org/confluence/display/MAVENOLD/Versioning for details). All subsequent versions of the given ref are returned. If no version is provided, the resource returns only the latest.
+
+The resource searches for folders under `http(s)://<host>/<repository_id>/<group_id>/<artifact_id>`.
+
+By default, It expects to get a list of valid maven versions (See https://cwiki.apache.org/confluence/display/MAVENOLD/Versioning for details). All subsequent versions of the given ref are returned. If no version is provided, the resource returns only the latest. (default `sort_version_stategy: maven`)
+
+If `sort_version_stategy: created`, the version are return base on the last created artefact first.
+
 ### `in`: Download the artifacts at the given ref.
 Download the artifacts of the given ref to the destination. It will return the same given ref as version.
 #### Parameters
