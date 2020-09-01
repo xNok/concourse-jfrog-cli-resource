@@ -145,5 +145,9 @@ fi
 
 metadata_files="$(echo "${metadata_files}" | jq '[to_entries[]|{name: "file_\(.key)", value}]')"
 metadata_folder=$(folder_metadata "${payload}" "${destination}")
-echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}" >&3
+if [[ -z "${build_publish}" ]]; then
+  echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}" >&3
+else
+  echo "\"${version}\"" | jq "{version: {ref: ., build: ${build_number}}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}" >&3
+fi
 exit 0
