@@ -148,6 +148,6 @@ metadata_folder=$(folder_metadata "${payload}" "${destination}")
 if [[ -z "${build_publish}" ]]; then
   echo "\"${version}\"" | jq "{version: {ref: .}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}" >&3
 else
-  echo "\"${version}\"" | jq "{version: {ref: ., build: ${build_number}}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}" >&3
+  echo "\"${version}\"" | jq "{version: {ref: ., build: "${build_number}"}, metadata: $(echo ${metadata_folder} | jq ". + ${metadata_files}")}" >&3
 fi
 exit 0
